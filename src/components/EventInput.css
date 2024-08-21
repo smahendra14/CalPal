@@ -1,0 +1,16 @@
+.event-description-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+  }
+  
+  .event-description-input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 75vw;
+    max-width: 800px;
+  }
+  

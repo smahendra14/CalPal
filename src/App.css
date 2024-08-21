@@ -36,3 +36,55 @@
     transform: rotate(360deg);
   }
 }
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;  /* Center horizontally */
+  align-items: center;      /* Center vertically */
+  height: 100vh;            /* Full height of the viewport */
+}
+
+.google-signin-button {
+  display: flex;
+  align-items: center;
+  padding: 20px 30px;
+  background-color: #98A2FD;  /* Google blue */
+  color: white;
+  border: none;
+  border-radius: 18px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.google-signin-button:hover {
+  background-color: #4852A9;  /* Darker blue on hover */
+}
+
+.google-icon {
+  margin-right: 20px;  /* Space between icon and text */
+  color: black
+}
+
+.view-events-button {
+  background-color: #98A2FD; 
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 20px 30px;
+  color: white;
+}
+
+.view-events-button:hover {
+  background-color: #4852A9;
+}
+
+.user-email {
+  color: green;
+  font-size: 20px;
+}
