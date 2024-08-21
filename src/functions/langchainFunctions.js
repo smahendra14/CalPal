@@ -4,10 +4,8 @@ import {StructuredOutputParser} from 'langchain/output_parsers'
 import {z} from 'zod';
 
 const model = new ChatOpenAI({
-    openAIApiKey: "sk-proj-4oNLKsD1Nqn6i0JsR02IT3BlbkFJ2W7p478lN8U8urQ5w8DQ",
     modelName: "gpt-3.5-turbo",
     temperature: 0,
-
 });
 
 export async function extractEventInfo(description) {
