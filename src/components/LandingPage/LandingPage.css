@@ -1,0 +1,64 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.title-text {
+  font-family: monospace;
+  text-shadow: 0 0 15px rgba(255, 165, 0, 0.9);
+  font-size: 5rem;
+}
+
+.header-text {
+  font-weight: normal;
+}
+
+.special-header-text {
+  color: black;
+  background-color: orange;
+  padding: 8px;
+  border-radius: 16px;
+  font-weight: bold;
+}
+
+.description-container {
+  padding-left: 4rem;
+  padding-right: 4rem;
+  margin-top: 0.5rem;
+}
+
+.description-text {
+  font-weight: normal;
+  color: rgb(80, 62, 28);
+}
+
+.sign-in-label-text {
+  font-weight: normal;
+}
+
+.google-signin-button {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding-right: 1rem;
+  color: black;
+  border-color: black;
+  border-radius: 4rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.google-signin-button:hover {
+  background-color: lightgrey; /* Darker blue on hover */
+}
+
+.google-icon {
+  margin-right: 16px;
+  height: 3rem;
+  width: 3rem;
+}

@@ -6,10 +6,9 @@ import {
   useSupabaseClient,
   useSessionContext,
 } from "@supabase/auth-helpers-react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import EventViewModal from "./components/EventViewModal.js";
 import { extractEventInfo } from "./functions/langchainFunctions.js";
+import LandingPage from "./components/LandingPage/LandingPage.js";
 
 function App() {
   const session = useSession(); // similar to accessing a users info and tokens, session exists = have a user
@@ -17,26 +16,10 @@ function App() {
   const { isLoading } = useSessionContext();
   const [events, setEvents] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [eventTite, setEventTitle] = useState("");
-  const [eventDate, setEventDate] = useState();
-  const [eventSummary, setEventSummary] = useState("");
   const [eventDescription, setEventDescription] = useState("");
 
   if (isLoading) {
     return <></>; // used to get around flickering that occurs when you reload the page when signed in
-  }
-
-  async function googleSignIn() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        scopes: "https://www.googleapis.com/auth/calendar", // delimit separate scopes with a space in between
-      },
-    });
-    if (error) {
-      alert("Error logging in to Google provider with Supabase");
-      console.log(error);
-    }
   }
 
   async function signOut() {
@@ -45,7 +28,7 @@ function App() {
 
   async function addEvent() {
     console.log("testing create calendar event functionality");
-    const extractResponse  = await extractEventInfo(eventDescription);
+    const extractResponse = await extractEventInfo(eventDescription);
     console.log(extractResponse);
     const event = {
       summary: extractResponse.title,
@@ -157,17 +140,9 @@ function App() {
             <button onClick={() => signOut()}>Sign Out</button>
           </div>
         ) : (
-          <div className="container">
-            <h1>Welcome to CalPal!</h1>
-            <h3>To get started, sign in to sync your Google Calendar</h3>
-            <button
-              onClick={() => googleSignIn()}
-              className="google-signin-button"
-            >
-              <FontAwesomeIcon icon={faGoogle} className="google-icon" />
-              Sign In With Google
-            </button>
-          </div>
+          <>
+            <LandingPage supabase={supabase} />
+          </>
         )}
       </div>
       {isModalOpen && (
