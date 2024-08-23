@@ -122,3 +122,34 @@ h4 {
     opacity: 0;
   }
 }
+
+.modal {
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  width: 300px;
+}
+
+.close {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.confirmation-title {
+  font-size: 24px;
+  text-align: center;
+}
