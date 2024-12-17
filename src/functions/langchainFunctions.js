@@ -16,7 +16,7 @@ export async function extractEventInfo(description) {
 
 async function callZodOutputParser(description) {
   const prompt = ChatPromptTemplate.fromTemplate(`
-      Extract information from the following phrase. 
+      Extract information about a scheduled event from the following phrase. If the description is not about an event, do not parse it.
       Formatting instructions: {format_instructions}
       Phrase: {phrase}
     `);

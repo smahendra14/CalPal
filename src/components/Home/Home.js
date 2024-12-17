@@ -2,66 +2,191 @@ import React, { useState } from "react";
 import "./Home.css";
 import { extractEventInfo } from "../../functions/langchainFunctions.js";
 
+const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
+  if (!event) {
+    return null;
+  }
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Confirm Event Details</h2>
+        <p>Please review the event before adding to your calendar:</p>
+
+        <div className="event-details">
+          <p>
+            <strong>Event:</strong> {event.summary}
+          </p>
+          <p>
+            <strong>Start:</strong>{" "}
+            {new Date(event.start.dateTime).toLocaleString()}
+          </p>
+          <p>
+            <strong>End:</strong>{" "}
+            {new Date(event.end.dateTime).toLocaleString()}
+          </p>
+        </div>
+
+        <div className="modal-actions">
+          <button onClick={onCancel} className="modal-button cancel">
+            Edit Event
+          </button>
+          <button onClick={onConfirm} className="modal-button confirm">
+            Confirm and Add
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Home = ({ session, supabase, isLoading }) => {
   const [eventDescription, setEventDescription] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingEvent, setPendingEvent] = useState(null);
+
   async function signOut() {
     await supabase.auth.signOut();
   }
 
   const handleInputChange = (e) => {
     setEventDescription(e.target.value);
+
+    // Clear any previous error message once the user starts typing again
+    if (showErrorAlert) {
+      setShowErrorAlert(false);
+      setErrorMessage("");
+    }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      addEvent();
+      e.preventDefault();
+      setShowErrorAlert(false); 
+      setErrorMessage(""); 
+      prepareEventForConfirmation();
     }
   };
 
-  async function addEvent() {
-    setShowAlert(true);
-    setEventDescription("");
-    const extractResponse = await extractEventInfo(eventDescription);
-    const event = {
-      summary: extractResponse.title,
-      start: {
-        dateTime: extractResponse.calendarStartInputTime,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      end: {
-        dateTime: extractResponse.calendarEndInputTime,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-    };
-    await fetch(
-      "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + session.provider_token,
-        },
-        body: JSON.stringify(event),
+  async function prepareEventForConfirmation() {
+
+    // Reset previous errors
+    setShowErrorAlert(false);
+    setErrorMessage("");
+
+    try {
+      setShowAlert(true);
+      const extractResponse = await extractEventInfo(eventDescription);
+
+      // Validate extracted information
+      if (
+        !extractResponse.title ||
+        !extractResponse.calendarStartInputTime ||
+        !extractResponse.calendarEndInputTime
+      ) {
+        throw new Error(
+          "Could not parse event details. Please check your description."
+        );
       }
-    )
-      .then((data) => {
-        return data.json();
-      })
-      .then((data) => {
-        setShowAlert(false);
-        setShowSuccess(true);
-        setTimeout(() => {
-          setShowSuccess(false);
-        }, 4000);
-      });
+
+      const event = {
+        summary: extractResponse.title,
+        start: {
+          dateTime: extractResponse.calendarStartInputTime,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        end: {
+          dateTime: extractResponse.calendarEndInputTime,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      };
+
+      // Store pending event and show confirmation modal
+      setPendingEvent(event);
+      setShowConfirmModal(true);
+      setShowAlert(false);
+      setEventDescription("");
+    } catch (error) {
+      console.error("Error preparing event:", error);
+      setShowAlert(false);
+      setShowErrorAlert(true);
+      setErrorMessage(
+        "Unable to parse event. Please try a different description."
+      );
+    }
   }
+
+  async function confirmAddEvent() {
+    if (!pendingEvent) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + session.provider_token,
+          },
+          body: JSON.stringify(pendingEvent),
+        }
+      );
+
+      if (!response.ok) {
+        // Check for a specific error like 400 Bad Request
+        const errorDetails = await response.json();
+        throw new Error(
+          `Failed to add event: ${errorDetails.error.message || "Unknown error"}`
+        );
+      }
+
+      const data = await response.json();
+
+      // Close modal and show success
+      setShowConfirmModal(false);
+      setShowSuccess(true);
+      setPendingEvent(null);
+
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 4000);
+    } catch (error) {
+      console.error("Error adding event:", error);
+      setShowErrorAlert(true);
+      setErrorMessage("Failed to add event to calendar. Please try again.");
+    }
+  }
+
+  const cancelAddEvent = () => {
+    setShowConfirmModal(false);
+    setPendingEvent(null);
+    setEventDescription("");
+  };
 
   if (isLoading) {
     return <></>; // used to get around flickering that occurs when you reload the page when signed in
   }
+
   return (
     <div className="home-container">
+      {/* Error Alert */}
+      {showErrorAlert && (
+        <div className="alert error">
+          {errorMessage}
+          <button
+            className="close-error"
+            onClick={() => setShowErrorAlert(false)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="header-bar">
         <h1 className="title-text">CalPal</h1>
         {showAlert && (
@@ -84,6 +209,8 @@ const Home = ({ session, supabase, isLoading }) => {
           </button>
         </div>
       </div>
+
+      {/* Event input section */}
       <div className="body-container">
         <div>
           <input
@@ -94,10 +221,22 @@ const Home = ({ session, supabase, isLoading }) => {
             value={eventDescription}
           />
         </div>
-        <button onClick={addEvent} className="add-to-calendar-button">
+        <button
+          onClick={prepareEventForConfirmation}
+          className="add-to-calendar-button"
+        >
           Add to Calendar
         </button>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <ConfirmationModal
+          event={pendingEvent}
+          onConfirm={confirmAddEvent}
+          onCancel={cancelAddEvent}
+        />
+      )}
     </div>
   );
 };
