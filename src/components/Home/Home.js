@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "./Home.css";
 import { extractEventInfo } from "../../functions/langchainFunctions.js";
+import "./FileUpload/FileUpload.js"
+import FileUpload from "./FileUpload/FileUpload.js";
 
 const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
   if (!event) {
@@ -64,20 +66,19 @@ const Home = ({ session, supabase, isLoading }) => {
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      if (showConfirmModal) { 
+      if (showConfirmModal) {
         e.preventDefault();
         confirmAddEvent();
       } else {
         e.preventDefault();
-        setShowErrorAlert(false); 
-        setErrorMessage(""); 
+        setShowErrorAlert(false);
+        setErrorMessage("");
         prepareEventForConfirmation();
       }
     }
   };
 
   async function prepareEventForConfirmation() {
-
     // Reset previous errors
     setShowErrorAlert(false);
     setErrorMessage("");
@@ -144,7 +145,9 @@ const Home = ({ session, supabase, isLoading }) => {
         // Check for a specific error like 400 Bad Request
         const errorDetails = await response.json();
         throw new Error(
-          `Failed to add event: ${errorDetails.error.message || "Unknown error"}`
+          `Failed to add event: ${
+            errorDetails.error.message || "Unknown error"
+          }`
         );
       }
 
@@ -231,6 +234,7 @@ const Home = ({ session, supabase, isLoading }) => {
         >
           Add to Calendar
         </button>
+        <FileUpload />
       </div>
 
       {/* Confirmation Modal */}
