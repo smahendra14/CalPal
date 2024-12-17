@@ -1,10 +1,13 @@
 body {
   background-color: #f9f9f9; /* Light grey background */
-  background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-                    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-image: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px
+    ),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
   background-size: 20px 20px; /* Size of the grid pattern */
 }
-
 
 .App {
   text-align: center;
@@ -46,7 +49,7 @@ body {
 }
 
 .view-events-button {
-  background-color: orange; 
+  background-color: orange;
   border: none;
   border-radius: 18px;
   cursor: pointer;
@@ -65,4 +68,3 @@ body {
   color: green;
   font-size: 20px;
 }
-

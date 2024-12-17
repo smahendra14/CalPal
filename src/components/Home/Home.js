@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import "./Home.css";
 import { extractEventInfo } from "../../functions/langchainFunctions.js";
 
-
 const Home = ({ session, supabase, isLoading }) => {
   const [eventDescription, setEventDescription] = useState("");
   const [showAlert, setShowAlert] = useState(false);
@@ -15,11 +14,11 @@ const Home = ({ session, supabase, isLoading }) => {
     setEventDescription(e.target.value);
   };
 
-  const handleKeyPress = (e) => { 
-    if (e.key === "Enter") { 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
       addEvent();
     }
-  }
+  };
 
   async function addEvent() {
     setShowAlert(true);
@@ -53,7 +52,7 @@ const Home = ({ session, supabase, isLoading }) => {
         setShowAlert(false);
         setShowSuccess(true);
         setTimeout(() => {
-            setShowSuccess(false);
+          setShowSuccess(false);
         }, 4000);
       });
   }
@@ -65,8 +64,16 @@ const Home = ({ session, supabase, isLoading }) => {
     <div className="home-container">
       <div className="header-bar">
         <h1 className="title-text">CalPal</h1>
-        {showAlert && <div className="alert" id="alert">Adding event to your calendar...</div>}
-        {showSuccess && <div className="alert">Event added! Check your Google Calendar to confirm</div>}
+        {showAlert && (
+          <div className="alert" id="alert">
+            Adding event to your calendar...
+          </div>
+        )}
+        {showSuccess && (
+          <div className="alert">
+            Event added! Check your Google Calendar to confirm
+          </div>
+        )}
         <div className="account-actions">
           <h4 id="description">
             You are currently linked to the primary calendar associated with:

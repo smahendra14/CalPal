@@ -1,8 +1,6 @@
 import React from "react";
-import googleLogo from '../../assets/google-logo.png'
+import googleLogo from "../../assets/google-logo.png";
 import "./LandingPage.css";
-
-
 
 const LandingPage = ({ supabase }) => {
   async function googleSignIn() {
