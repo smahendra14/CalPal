@@ -7,19 +7,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 
 
 const FileUpload = () => {
-  const [file, setFile] = useState(null);
-  const [events, setEvents] = useState([]);
   const [pdfText, setPdfText] = useState("");
-
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
-    console.log(file);
-  };
-
-  const extractInfo = async () => {
-    extractEventInfoFromFile(file);
-  }
+  const [events, setEvents] = useState([]);
 
   const extractTextFromPDF = async (file) => {
     const reader = new FileReader();
@@ -43,7 +32,13 @@ const FileUpload = () => {
         extractedText += `\nPage ${i}:\n${pageText}`;
       }
 
-      setPdfText(extractedText);
+      try { 
+        const events = await extractEventInfoFromFile(extractedText);
+        console.log(events);
+        setEvents(events);
+      } catch (e) { 
+        alert("Error parsing the file you uploaded. Please try again with a different file.");
+      }
     };
 
     reader.readAsArrayBuffer(file);
@@ -61,11 +56,25 @@ const FileUpload = () => {
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>PDF Upload and Display</h1>
+      <h1>PDF Upload and Event Display</h1>
       <input type="file" accept="application/pdf" onChange={handleFileUpload} />
-      <div style={{ whiteSpace: "pre-wrap", marginTop: "20px" }}>
-        <h2>Extracted PDF Text:</h2>
-        {pdfText || "Upload a PDF to see its contents."}
+
+      {/* Event Display Section */}
+      <div style={{ marginTop: "20px" }}>
+        <h2>Extracted Events:</h2>
+        {events.length > 0 ? (
+          <ul>
+            {events.map((event, index) => (
+              <li key={index} style={{ marginBottom: "10px" }}>
+                <strong>Title:</strong> {event.title} <br />
+                <strong>Date:</strong> {event.date} <br />
+                <strong>Time:</strong> {event.startTime} - {event.endTime}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Upload a PDF to extract events.</p>
+        )}
       </div>
     </div>
   );

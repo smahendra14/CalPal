@@ -30,12 +30,12 @@ const EventSchema = z.object({
     .string()
     .describe(
       "The date and time at which the event is starting in ISO format: YYYY-MM-DDThh:mm:ss"
-    ),
+    ).nullable(),
   calendarEndInputTime: z
     .string()
     .describe(
       "The date and time at which the event is ending in ISO format: YYYY-MM-DDThh:mm:ss"
-    ),
+    ).nullable(),
 });
 
 const EventsSchema = z.array(EventSchema);
@@ -45,15 +45,38 @@ export async function extractEventInfo(description) {
   return response;
 }
 
-export async function extractEventInfoFromFile(file) { 
-  try {
-    
-  } catch {
+export async function extractEventInfoFromFile(description) {
+  const prompt = ChatPromptTemplate.fromTemplate(`
+    From the following PDF file content, extract information about ALL scheduled events like 
+    assignments, tests, classes, or other events. 
+    If there are no events described, do not parse it.
 
-  }
+    The output should have the following fields:
+    - title: string
+    - startTime: string
+    - endTime: string
+    - date: string
+    - calendarStartInputTime: string (leave empty string "" if not applicable)
+    - calendarEndInputTime: string (leave empty string "" if not applicable)
 
-  
+    Formatting instructions: {format_instructions}
+    Phrase: {phrase}
+  `);
 
+  const outputParser = StructuredOutputParser.fromZodSchema(EventsSchema);
+
+  const currentDate = new Date();
+  const tomorrow = new Date();
+  const hours = currentDate.getHours();
+  const minutes = currentDate.getMinutes();
+  tomorrow.setDate(currentDate.getDate() + 1);
+  const phrase = description;
+  console.log("made it here");
+  const chain = prompt.pipe(model).pipe(outputParser);
+  return await chain.invoke({
+    phrase: phrase,
+    format_instructions: outputParser.getFormatInstructions(),
+  });
 }
 
 async function callZodOutputParser(description) {
