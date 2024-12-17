@@ -15,6 +15,12 @@ const Home = ({ session, supabase, isLoading }) => {
     setEventDescription(e.target.value);
   };
 
+  const handleKeyPress = (e) => { 
+    if (e.key === "Enter") { 
+      addEvent();
+    }
+  }
+
   async function addEvent() {
     setShowAlert(true);
     setEventDescription("");
@@ -77,6 +83,7 @@ const Home = ({ session, supabase, isLoading }) => {
             className="event-input"
             placeholder="Enter event description i.e. practice coding on the 25th at 9 am"
             onChange={handleInputChange}
+            onKeyDown={handleKeyPress}
             value={eventDescription}
           />
         </div>
