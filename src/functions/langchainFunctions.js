@@ -2,12 +2,11 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StructuredOutputParser } from "langchain/output_parsers";
 import { z } from "zod";
-import { key } from "./api.js";
 
 const model = new ChatGoogleGenerativeAI({
   modelName: "gemini-pro",
   temperature: 0,
-  apiKey: key,
+  apiKey: process.env.REACT_APP_GEMINI_API_KEY,
 });
 
 export async function extractEventInfo(description) {
