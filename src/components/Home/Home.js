@@ -98,7 +98,7 @@ const Home = ({ session, supabase, isLoading }) => {
       }
 
       const event = {
-        summary: extractResponse.title,
+        summary: extractResponse.title + " (from CalPal)",
         start: {
           dateTime: extractResponse.calendarStartInputTime,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -128,7 +128,6 @@ const Home = ({ session, supabase, isLoading }) => {
     if (!pendingEvent) {
       return;
     }
-
     try {
       const response = await fetch(
         "https://www.googleapis.com/calendar/v3/calendars/primary/events",
