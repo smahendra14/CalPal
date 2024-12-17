@@ -81,7 +81,7 @@ const Home = ({ session, supabase, isLoading }) => {
         <div>
           <input
             className="event-input"
-            placeholder="Enter event description i.e. practice coding on the 25th at 9 am"
+            placeholder="Enter event description i.e. practice coding on the 25th at 10 am"
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
             value={eventDescription}
