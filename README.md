@@ -6,4 +6,4 @@ Technologies: React, JS, LangChain, Supabase, Google Calendar API
 
 Watch a demo here: https://youtu.be/7P-4f5_B-DU
 
-Note: CalPal is currently only open for select test users so logging in will not work
+Note: CalPal is currently only open for select test users and will not work for the general public
