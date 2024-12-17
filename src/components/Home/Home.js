@@ -64,10 +64,15 @@ const Home = ({ session, supabase, isLoading }) => {
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      e.preventDefault();
-      setShowErrorAlert(false); 
-      setErrorMessage(""); 
-      prepareEventForConfirmation();
+      if (showConfirmModal) { 
+        e.preventDefault();
+        confirmAddEvent();
+      } else {
+        e.preventDefault();
+        setShowErrorAlert(false); 
+        setErrorMessage(""); 
+        prepareEventForConfirmation();
+      }
     }
   };
 
