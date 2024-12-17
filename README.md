@@ -5,3 +5,5 @@ AI-powered personal calendar assistant that allows you to add events to your cal
 Technologies: React, JS, LangChain, Supabase, Google Calendar API
 
 Watch a demo here: https://youtu.be/7P-4f5_B-DU
+
+Note: CalPal is currently only open for select test users so logging in will not work
