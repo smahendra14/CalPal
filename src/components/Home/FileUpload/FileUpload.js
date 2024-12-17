@@ -9,8 +9,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 const FileUpload = () => {
   const [pdfText, setPdfText] = useState("");
   const [events, setEvents] = useState([]);
+  const [file, setFile] = useState();
+  const [loading, setLoading] = useState(false);
 
   const extractTextFromPDF = async (file) => {
+    setLoading(true);
     const reader = new FileReader();
 
     reader.onload = async (event) => {
@@ -38,26 +41,41 @@ const FileUpload = () => {
         setEvents(events);
       } catch (e) { 
         alert("Error parsing the file you uploaded. Please try again with a different file.");
+      } finally {
+        setLoading(false);
       }
     };
 
     reader.readAsArrayBuffer(file);
   };
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-
+  const handleFileUpload = async (event) => {
     if (file && file.type === "application/pdf") {
-      extractTextFromPDF(file);
-    } else {
-      alert("Please upload a valid PDF file.");
-    }
+        try {
+            await extractTextFromPDF(file); 
+          } catch (error) {
+            alert("Error parsing the file you uploaded. Please try again with a different file.");
+          } 
+      } else {
+        alert("Please upload a valid PDF file.");
+      }
+  }
+
+  const handleFileChange = (event) => {
+    const uploadedFile = event.target.files[0];
+    setFile(uploadedFile);
   };
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1>PDF Upload and Event Display</h1>
-      <input type="file" accept="application/pdf" onChange={handleFileUpload} />
+      <input type="file" accept="application/pdf" onChange={handleFileChange} />
+      <button onClick={handleFileUpload}>
+        Upload
+      </button>
+      {loading && 
+        <p>Loading ...</p>
+      }
 
       {/* Event Display Section */}
       <div style={{ marginTop: "20px" }}>
