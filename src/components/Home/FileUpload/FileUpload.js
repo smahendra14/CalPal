@@ -5,7 +5,6 @@ import "pdfjs-dist/web/pdf_viewer.css";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`;
 
-
 const FileUpload = () => {
   const [pdfText, setPdfText] = useState("");
   const [events, setEvents] = useState([]);
@@ -35,12 +34,15 @@ const FileUpload = () => {
         extractedText += `\nPage ${i}:\n${pageText}`;
       }
 
-      try { 
+      try {
+        console.log(extractedText);
         const events = await extractEventInfoFromFile(extractedText);
         console.log(events);
         setEvents(events);
-      } catch (e) { 
-        alert("Error parsing the file you uploaded. Please try again with a different file.");
+      } catch (e) {
+        alert(
+          "Error parsing the file you uploaded. Please try again with a different file."
+        );
       } finally {
         setLoading(false);
       }
@@ -51,15 +53,17 @@ const FileUpload = () => {
 
   const handleFileUpload = async (event) => {
     if (file && file.type === "application/pdf") {
-        try {
-            await extractTextFromPDF(file); 
-          } catch (error) {
-            alert("Error parsing the file you uploaded. Please try again with a different file.");
-          } 
-      } else {
-        alert("Please upload a valid PDF file.");
+      try {
+        await extractTextFromPDF(file);
+      } catch (error) {
+        alert(
+          "Error parsing the file you uploaded. Please try again with a different file."
+        );
       }
-  }
+    } else {
+      alert("Please upload a valid PDF file.");
+    }
+  };
 
   const handleFileChange = (event) => {
     const uploadedFile = event.target.files[0];
@@ -70,12 +74,8 @@ const FileUpload = () => {
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1>PDF Upload and Event Display</h1>
       <input type="file" accept="application/pdf" onChange={handleFileChange} />
-      <button onClick={handleFileUpload}>
-        Upload
-      </button>
-      {loading && 
-        <p>Loading ...</p>
-      }
+      <button onClick={handleFileUpload}>Upload</button>
+      {loading && <p>Loading ...</p>}
 
       {/* Event Display Section */}
       <div style={{ marginTop: "20px" }}>
