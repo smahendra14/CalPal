@@ -85,7 +85,19 @@ const Home = ({ session, supabase, isLoading }) => {
 
     try {
       setShowAlert(true);
-      const extractResponse = await extractEventInfo(eventDescription);
+      const response = await fetch("http://localhost:8000/api/calendar/extractSingleEventInfo", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({eventDescription}),
+
+      });
+      if (!response.ok) {
+        throw new Error('Failed to get event information');
+      }
+  
+      const extractResponse = await response.json(); 
 
       // Validate extracted information
       if (

@@ -1,0 +1,23 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "nodemon --env-file=.env server"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "@langchain/core": "^0.3.24",
+        "@langchain/google-genai": "^0.1.5",
+        "colors": "^1.4.0",
+        "cors": "^2.8.5",
+        "express": "^4.21.2",
+        "langchain": "^0.3.7",
+        "nodemon": "^3.1.9"
+    }
+}
