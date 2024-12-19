@@ -67,8 +67,8 @@ export async function extractEventInfoFromFile(description) {
 
   const currentDate = new Date();
   const tomorrow = new Date();
-  const hours = currentDate.getHours();
-  const minutes = currentDate.getMinutes();
+  // const hours = currentDate.getHours();
+  // const minutes = currentDate.getMinutes();
   tomorrow.setDate(currentDate.getDate() + 1);
   const phrase = description;
   console.log("made it here");

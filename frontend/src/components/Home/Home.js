@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import "./Home.css";
-import { extractEventInfo } from "../../functions/langchainFunctions.js";
 import "./FileUpload/FileUpload.js"
 import FileUpload from "./FileUpload/FileUpload.js";
 
@@ -154,6 +153,15 @@ const Home = ({ session, supabase, isLoading }) => {
       );
 
       if (!response.ok) {
+
+        // Check for 401 unauthorized
+        if (response.status === 401 || response.status === 403) {
+          setErrorMessage("Failed to authenticate user. Please try logging in again.")
+          setShowConfirmModal(false);
+          setShowErrorAlert(true);
+          return; 
+        }
+
         // Check for a specific error like 400 Bad Request
         const errorDetails = await response.json();
         throw new Error(
