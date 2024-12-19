@@ -40,7 +40,7 @@ const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
   );
 };
 
-const Home = ({ session, supabase, isLoading }) => {
+const Home = ({ session, supabase, isLoading, refreshToken }) => {
   const [eventDescription, setEventDescription] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
