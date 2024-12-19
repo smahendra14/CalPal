@@ -1,19 +1,50 @@
 import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
+import cron from "node-cron";
+import { createClient } from "@supabase/supabase-js";
 import calendar from "./routes/calendar.js";
 import logger from "./middleware/logger.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/error.js";
 const port = process.env.PORT || 8000;
 
-// Email message options
-const mailOptions = {
-    from: process.env.SENDER_EMAIL,
-    to: process.env.RECEIVER_EMAIL,
-    subject: "testing email",
-    text: "hi this is testing nodemailer",
-};
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+);
+
+async function sendEmails() {
+    const { data: users, error } = await supabase
+        .from("UserInfo")
+        .select("*")
+        .eq("send_daily_summary", true);
+    console.log(users);
+    if (error) {
+        console.error("Error fetching users:", error);
+        return;
+    }
+    if (users.length === 0) {
+        console.log("No users opted in for daily summary emails.");
+        return;
+    }
+    for (const user of users) {
+        // Email message options
+        const mailOptions = {
+            from: process.env.SENDER_EMAIL,
+            to: user.email,
+            subject: "Daily Calendar Summary",
+            text: "here is your daily event summary",
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log(`Daily summary sent to ${user.email}`);
+        } catch (error) {
+            console.error(`Error sending email to ${user.email}:`, error);
+        }
+    }
+}
 
 // Email transport configuration
 const transporter = nodemailer.createTransport({
@@ -27,13 +58,10 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// Send email
-// transporter.sendMail(mailOptions, (error, info) => {
-//     if (error) {
-//         console.log(error);
-//     } else {
-//         console.log("Email send:", info.response);
-//     }
+// Send email at scheduled time
+// cron.schedule("* * * * *", async () => {
+//     console.log("Running scheduled email job...");
+//     await sendEmails();
 // });
 
 const app = express();

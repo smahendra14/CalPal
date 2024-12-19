@@ -14,10 +14,12 @@
     "dependencies": {
         "@langchain/core": "^0.3.24",
         "@langchain/google-genai": "^0.1.5",
+        "@supabase/supabase-js": "^2.47.10",
         "colors": "^1.4.0",
         "cors": "^2.8.5",
         "express": "^4.21.2",
         "langchain": "^0.3.7",
+        "node-cron": "^3.0.3",
         "nodemailer": "^6.9.16",
         "nodemon": "^3.1.9"
     }
