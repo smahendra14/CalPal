@@ -2,6 +2,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StructuredOutputParser } from "langchain/output_parsers";
 import { z } from "zod";
+import { google } from "googleapis";
 
 const model = new ChatGoogleGenerativeAI({
     modelName: "gemini-pro",
@@ -38,8 +39,40 @@ const EventSchema = z.object({
         ),
 });
 
+async function callZodOutputParser(description) {
+    try {
+        const prompt = ChatPromptTemplate.fromTemplate(`
+            Extract information about a scheduled event from the following phrase. If the description is not about an event, do not parse it.
+            Formatting instructions: {format_instructions}
+            Phrase: {phrase}
+          `);
+
+        const outputParser = StructuredOutputParser.fromZodSchema(EventSchema);
+
+        const currentDate = new Date();
+        const tomorrow = new Date();
+        const hours = currentDate.getHours();
+        const minutes = currentDate.getMinutes();
+        tomorrow.setDate(currentDate.getDate() + 1);
+        const phrase =
+            description +
+            ". the date today is " +
+            currentDate.toDateString() +
+            `. the time right now is ${hours}:${minutes}`;
+
+        const chain = prompt.pipe(model).pipe(outputParser);
+        return await chain.invoke({
+            phrase: phrase,
+            format_instructions: outputParser.getFormatInstructions(),
+        });
+    } catch (error) {
+        console.error("Error parsing event description:", error);
+        throw error;
+    }
+}
+
 // @desc    Get details for a single event from description
-// @route   POST api/calendar/
+// @route   POST api/calendar/extractSingleEventInfo
 export const extractSingleEventInfo = async (req, res, next) => {
     try {
         const { eventDescription } = req.body;
@@ -82,34 +115,55 @@ export const extractSingleEventInfo = async (req, res, next) => {
     }
 };
 
-async function callZodOutputParser(description) {
+// @desc    Get all events scheduled today
+// @route   GET api/calendar/getEventsToday
+export const getEventsToday = async (req, res, next) => {
+    // const { email, refresh_token } = req.body;
+
+    const refresh_token ='1//05Dlo1mvcRrxwCgYIARAAGAUSNwF-L9Ir03bjBJqibIxJN7oG1tlnzGKJPMU2wFVGzwSr2tsjYjW5AUkM3Ge1nhlUDC4HmGrjGb4'
+    const email = 'satvik.mahendra@gmail.com'
+
     try {
-        const prompt = ChatPromptTemplate.fromTemplate(`
-            Extract information about a scheduled event from the following phrase. If the description is not about an event, do not parse it.
-            Formatting instructions: {format_instructions}
-            Phrase: {phrase}
-          `);
+        // Set up OAuth2 client with refresh token
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID, // Replace with your client ID
+            process.env.GOOGLE_CLIENT_SECRET, // Replace with your client secret
+            process.env.REDIRECT_URI // Replace with your redirect URI
+        );
 
-        const outputParser = StructuredOutputParser.fromZodSchema(EventSchema);
-
-        const currentDate = new Date();
-        const tomorrow = new Date();
-        const hours = currentDate.getHours();
-        const minutes = currentDate.getMinutes();
-        tomorrow.setDate(currentDate.getDate() + 1);
-        const phrase =
-            description +
-            ". the date today is " +
-            currentDate.toDateString() +
-            `. the time right now is ${hours}:${minutes}`;
-
-        const chain = prompt.pipe(model).pipe(outputParser);
-        return await chain.invoke({
-            phrase: phrase,
-            format_instructions: outputParser.getFormatInstructions(),
+        // Use the refresh token to get a new access token
+        oauth2Client.setCredentials({
+            refresh_token,
         });
+
+        // Instantiate the Calendar API with the authorized client
+        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+        // Get the date for "today" (start and end of the day)
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+
+        // Call the calendar API to get events for today
+        const response = await calendar.events.list({
+            calendarId: 'satvik.mahendra@gmail.com', // The user's email is used as the calendarId
+            timeMin: startOfToday.toISOString(),
+            timeMax: endOfToday.toISOString(),
+            singleEvents: true,
+            orderBy: "startTime",
+        });
+
+        const events = response.data.items;
+
+        // Check if any events are found
+        if (events.length === 0) {
+            res.status(200).json({ message: "No events for today." });
+        } else {
+            res.status(200).json({ events });
+        }
     } catch (error) {
-        console.error("Error parsing event description:", error);
-        throw error;
+        console.error("Error retrieving events:", error);
+        res.status(500).json({ error: "Failed to retrieve events." });
     }
-}
+};
