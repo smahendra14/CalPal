@@ -1,0 +1,35 @@
+name: Send Daily Summary Email
+
+on:
+    schedule:
+        # Run at 9 AM CST every day
+        - cron: "0 14 * * *"
+    workflow_dispatch:
+jobs:
+    send-summary:
+        runs-on: ubuntu-latest
+        env:
+            GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+            GOOGLE_APP_PASSWORD: ${{ secrets.GOOGLE_APP_PASSWORD }}
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+            GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        steps:
+            # Step 1: Check out the code
+            - name: Check out repository
+              uses: actions/checkout@v2
+
+            # Step 2: Set up Node.js
+            - name: Set up Node.js
+              uses: actions/setup-node@v2
+              with:
+                  node-version: "22" # Or specify your required Node.js version
+
+            # Step 3: Install dependencies
+            - name: Install dependencies
+              run: cd backend && npm install
+
+            # Step 4: Run your cron job script
+            - name: Run cron job to send emails
+              run: node backend/scripts/sendDailySummary.js
