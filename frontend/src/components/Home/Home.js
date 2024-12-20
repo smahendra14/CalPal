@@ -145,13 +145,30 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
         if (!pendingEvent) {
             return;
         }
+
         try {
+            let accessToken = session.provider_token;
+            // Test the current token by making a lightweight request or assuming expiry
+            try {
+                const testResponse = await fetch(
+                    "https://www.googleapis.com/oauth2/v3/tokeninfo",
+                    { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                if (!testResponse.ok) {
+                    throw new Error("Token is invalid");
+                }
+            } catch (error) {
+                // Refresh the token if the current one is invalid
+                console.log("Access token expired, refreshing...");
+                accessToken = await getRefreshedToken(refreshToken); // Use your passed-in refresh token
+            }
+
             const response = await fetch(
                 "https://www.googleapis.com/calendar/v3/calendars/primary/events",
                 {
                     method: "POST",
                     headers: {
-                        Authorization: "Bearer " + session.provider_token,
+                        Authorization: "Bearer " + accessToken,
                     },
                     body: JSON.stringify(pendingEvent),
                 }
@@ -196,6 +213,39 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
         }
     }
 
+    async function getRefreshedToken(refreshToken) {
+        try {
+            const response = await fetch(
+                "https://oauth2.googleapis.com/token",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams({
+                        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+                        client_secret:
+                            process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
+                        refresh_token: refreshToken,
+                        grant_type: "refresh_token",
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to refresh token: ${response.statusText}`
+                );
+            }
+
+            const data = await response.json();
+            return data.access_token; // The new access token
+        } catch (error) {
+            console.error("Error refreshing token:", error);
+            throw error;
+        }
+    }
+
     const cancelAddEvent = () => {
         setShowConfirmModal(false);
         setPendingEvent(null);
@@ -204,18 +254,21 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
 
     const addToSupabase = async () => {
         console.log("test");
-    
+
         const newUser = {
             email: "test678@gmail.com",
             send_daily_summary: false,
             refresh_token: refreshToken,
-            update_time: '08:00:00.000+00',
+            update_time: "08:00:00.000+00",
         };
-        const {data, error} = await supabase.from("UserInfo").insert([newUser]).single();
-        if (error) { 
-          console.log("error adding user", error);
-        } else { 
-          console.log("added successfully", data);
+        const { data, error } = await supabase
+            .from("UserInfo")
+            .insert([newUser])
+            .single();
+        if (error) {
+            console.log("error adding user", error);
+        } else {
+            console.log("added successfully", data);
         }
     };
 
