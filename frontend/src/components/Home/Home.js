@@ -196,27 +196,38 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
         }
     }
 
+    async function enableDailySummary() {
+        try {
+            const { error } = await supabase
+                .from("UserInfo")
+                .update({ send_daily_summary: true })
+                .eq("email", session.user.email);
+            if (error) {
+                throw error;
+            }
+        } catch (error) {
+            console.error("Error updating send_daily_summary", error.message);
+        }
+    }
+
+    async function disableDailySummary() {
+        try {
+            const { error } = await supabase
+                .from("UserInfo")
+                .update({ send_daily_summary: false })
+                .eq("email", session.user.email);
+            if (error) {
+                throw error;
+            }
+        } catch (error) {
+            console.error("Error updating send_daily_summary", error.message);
+        }
+    }
+
     const cancelAddEvent = () => {
         setShowConfirmModal(false);
         setPendingEvent(null);
         setEventDescription("");
-    };
-
-    const addToSupabase = async () => {
-        console.log("test");
-    
-        const newUser = {
-            email: "test678@gmail.com",
-            send_daily_summary: false,
-            refresh_token: refreshToken,
-            update_time: '08:00:00.000+00',
-        };
-        const {data, error} = await supabase.from("UserInfo").insert([newUser]).single();
-        if (error) { 
-          console.log("error adding user", error);
-        } else { 
-          console.log("added successfully", data);
-        }
     };
 
     if (isLoading) {
@@ -260,6 +271,16 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                     <button className="sign-out" onClick={() => signOut()}>
                         Sign Out
                     </button>
+                    <br />
+                    <br />
+                    <button onClick={enableDailySummary}>
+                        Enable Daily Summary
+                    </button>
+                    <br />
+                    <br />
+                    <button onClick={disableDailySummary}>
+                        Disable Daily Summary
+                    </button>
                 </div>
             </div>
 
@@ -280,7 +301,6 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                 >
                     Add to Calendar
                 </button>
-                <button onClick={addToSupabase}>Enable Daily Updates</button>
                 <FileUpload />
             </div>
 

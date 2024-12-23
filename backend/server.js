@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import calendar from "./routes/calendar.js";
+import settings from "./routes/settings.js";
 import logger from "./middleware/logger.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/error.js";
@@ -22,6 +23,7 @@ app.use(logger);
 
 // Routes
 app.use("/api/calendar", calendar);
+app.use("/api/settings", settings);
 
 // Error handler
 app.use(notFound);
