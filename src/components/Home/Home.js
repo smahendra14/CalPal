@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./Home.css";
+import { DateTime } from "luxon";
 
 const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
     if (!event) {
@@ -83,6 +84,9 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
         setShowErrorAlert(false);
         setErrorMessage("");
 
+        const userLocalTime = DateTime.now().set({ second: 0, millisecond: 0 }).toString();
+        console.log(userLocalTime);
+
         try {
             setShowAlert(true);
             const response = await fetch(
@@ -92,7 +96,10 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ eventDescription }),
+                    body: JSON.stringify({
+                        eventDescription: eventDescription,
+                        userLocalTime: userLocalTime,
+                    }),
                 }
             );
             if (!response.ok) {
