@@ -41,7 +41,7 @@ const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
     );
 };
 
-const Home = ({ session, supabase, isLoading }) => {
+const Home = ({ session, supabase, isLoading, refreshToken }) => {
     const [eventDescription, setEventDescription] = useState("");
     const [showAlert, setShowAlert] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -156,6 +156,16 @@ const Home = ({ session, supabase, isLoading }) => {
             );
 
             if (!response.ok) {
+                // Check for 401 unauthorized
+                if (response.status === 401 || response.status === 403) {
+                    setErrorMessage(
+                        "Failed to authenticate user. Please try logging in again."
+                    );
+                    setShowConfirmModal(false);
+                    setShowErrorAlert(true);
+                    return;
+                }
+
                 // Check for a specific error like 400 Bad Request
                 const errorDetails = await response.json();
                 throw new Error(
@@ -181,6 +191,34 @@ const Home = ({ session, supabase, isLoading }) => {
             setErrorMessage(
                 "Failed to add event to calendar. Please try again."
             );
+        }
+    }
+
+    async function enableDailySummary() {
+        try {
+            const { error } = await supabase
+                .from("UserInfo")
+                .update({ send_daily_summary: true })
+                .eq("email", session.user.email);
+            if (error) {
+                throw error;
+            }
+        } catch (error) {
+            console.error("Error updating send_daily_summary", error.message);
+        }
+    }
+
+    async function disableDailySummary() {
+        try {
+            const { error } = await supabase
+                .from("UserInfo")
+                .update({ send_daily_summary: false })
+                .eq("email", session.user.email);
+            if (error) {
+                throw error;
+            }
+        } catch (error) {
+            console.error("Error updating send_daily_summary", error.message);
         }
     }
 
@@ -231,6 +269,18 @@ const Home = ({ session, supabase, isLoading }) => {
                     <button className="sign-out" onClick={() => signOut()}>
                         Sign Out
                     </button>
+                    <br />
+                    <br />
+                    <div className="toggle-daily-summary-container">
+                        <button onClick={enableDailySummary}>
+                            Enable Daily Summary
+                        </button>
+                        <br />
+                        <br />
+                        <button onClick={disableDailySummary}>
+                            Disable Daily Summary
+                        </button>
+                    </div>
                 </div>
             </div>
 
