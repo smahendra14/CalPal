@@ -84,7 +84,10 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
         setShowErrorAlert(false);
         setErrorMessage("");
 
-        const userLocalTime = DateTime.now().set({ second: 0, millisecond: 0 }).toString();
+        // pass in local time zone to backend for relative timings
+        const userLocalTime = DateTime.now()
+            .set({ second: 0, millisecond: 0 })
+            .toString();
         console.log(userLocalTime);
 
         try {
