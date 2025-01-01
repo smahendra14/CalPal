@@ -281,7 +281,7 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                     </button>
                     <br />
                     <br />
-                    <div className="toggle-daily-summary-container">
+                    {/*<div className="toggle-daily-summary-container">
                         <button onClick={enableDailySummary}>
                             Enable Daily Summary
                         </button>
@@ -291,6 +291,7 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                             Disable Daily Summary
                         </button>
                     </div>
+                    */}
                 </div>
             </div>
 
