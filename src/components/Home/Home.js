@@ -167,8 +167,13 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                 }
             } catch (error) {
                 // Refresh the token if the current one is invalid
-                console.log("Access token expired, refreshing...");
-                accessToken = await getRefreshedToken(refreshToken); // Use your passed-in refresh token
+                // setShowErrorAlert(true);
+                // setErrorMessage(
+                //     "Failed to add event because your session has expired. Please log in again."
+                // );
+
+                // console.log("Access token expired, refreshing...");
+                // accessToken = await getRefreshedToken(refreshToken); // Use your passed-in refresh token
             }
 
             const response = await fetch(
@@ -186,7 +191,7 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                 // Check for 401 unauthorized
                 if (response.status === 401 || response.status === 403) {
                     setErrorMessage(
-                        "Failed to authenticate user. Please try logging in again."
+                        "Failed to add event because your session has expired. Please try logging in again."
                     );
                     setShowConfirmModal(false);
                     setShowErrorAlert(true);
