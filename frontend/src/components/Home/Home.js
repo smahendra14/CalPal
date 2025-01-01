@@ -214,6 +214,7 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
     }
 
     async function getRefreshedToken(refreshToken) {
+        console.log("refresh token:", refreshToken || "no token found");
         try {
             const response = await fetch(
                 "https://oauth2.googleapis.com/token",
@@ -233,8 +234,10 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
             );
 
             if (!response.ok) {
+                const errorDetails = await response.json();
+                console.error("Token refresh failed:", errorDetails);
                 throw new Error(
-                    `Failed to refresh token: ${response.statusText}`
+                    `Failed to refresh token: ${errorDetails.error}`
                 );
             }
 
