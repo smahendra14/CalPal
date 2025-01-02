@@ -7,6 +7,7 @@ import {
 } from "@supabase/auth-helpers-react";
 import LandingPage from "./components/LandingPage/LandingPage.js";
 import Home from "./components/Home/Home.js";
+import FileUpload from "./components/Home/FileUpload/FileUpload.js";
 
 /**
  * Stores the refresh token of the signed-in user in the database
