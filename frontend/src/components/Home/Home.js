@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import "./Home.css";
-import { extractEventInfo } from "../../functions/langchainFunctions.js";
-import "./FileUpload/FileUpload.js";
-import FileUpload from "./FileUpload/FileUpload.js";
+import { DateTime } from "luxon";
 
 const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
     if (!event) {
@@ -30,7 +28,7 @@ const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
 
                 <div className="modal-actions">
                     <button onClick={onCancel} className="modal-button cancel">
-                        Edit Event
+                        Cancel
                     </button>
                     <button
                         onClick={onConfirm}
@@ -44,7 +42,7 @@ const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
     );
 };
 
-const Home = ({ session, supabase, isLoading }) => {
+const Home = ({ session, supabase, isLoading, refreshToken }) => {
     const [eventDescription, setEventDescription] = useState("");
     const [showAlert, setShowAlert] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -53,6 +51,9 @@ const Home = ({ session, supabase, isLoading }) => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingEvent, setPendingEvent] = useState(null);
 
+    /**
+     * Log a user out of their Supabase session
+     */
     async function signOut() {
         await supabase.auth.signOut();
     }
@@ -86,9 +87,31 @@ const Home = ({ session, supabase, isLoading }) => {
         setShowErrorAlert(false);
         setErrorMessage("");
 
+        // pass in local time zone to backend for relative timings
+        const userLocalTime = DateTime.now()
+            .set({ second: 0, millisecond: 0 })
+            .toString();
+
         try {
             setShowAlert(true);
-            const extractResponse = await extractEventInfo(eventDescription);
+            const response = await fetch(
+                "https://calpal-backend-deploy.vercel.app/api/calendar/extractSingleEventInfo",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        eventDescription: eventDescription,
+                        userLocalTime: userLocalTime,
+                    }),
+                }
+            );
+            if (!response.ok) {
+                throw new Error("Failed to get event information");
+            }
+
+            const extractResponse = await response.json();
 
             // Validate extracted information
             if (
@@ -132,19 +155,51 @@ const Home = ({ session, supabase, isLoading }) => {
         if (!pendingEvent) {
             return;
         }
+
         try {
+            let accessToken = session.provider_token;
+            // Test the current token by making a lightweight request or assuming expiry
+            try {
+                const testResponse = await fetch(
+                    "https://www.googleapis.com/oauth2/v3/tokeninfo",
+                    { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                if (!testResponse.ok) {
+                    throw new Error("Token is invalid");
+                }
+            } catch (error) {
+                // Refresh the token if the current one is invalid
+                // setShowErrorAlert(true);
+                // setErrorMessage(
+                //     "Failed to add event because your session has expired. Please log in again."
+                // );
+
+                // console.log("Access token expired, refreshing...");
+                // accessToken = await getRefreshedToken(refreshToken); // Use your passed-in refresh token
+            }
+
             const response = await fetch(
                 "https://www.googleapis.com/calendar/v3/calendars/primary/events",
                 {
                     method: "POST",
                     headers: {
-                        Authorization: "Bearer " + session.provider_token,
+                        Authorization: "Bearer " + accessToken,
                     },
                     body: JSON.stringify(pendingEvent),
                 }
             );
 
             if (!response.ok) {
+                // Check for 401 unauthorized
+                if (response.status === 401 || response.status === 403) {
+                    setErrorMessage(
+                        "Failed to add event because your session has expired. Please try logging in again."
+                    );
+                    setShowConfirmModal(false);
+                    setShowErrorAlert(true);
+                    return;
+                }
+
                 // Check for a specific error like 400 Bad Request
                 const errorDetails = await response.json();
                 throw new Error(
@@ -170,6 +225,67 @@ const Home = ({ session, supabase, isLoading }) => {
             setErrorMessage(
                 "Failed to add event to calendar. Please try again."
             );
+        }
+    }
+
+    async function getRefreshedToken(refreshToken) {
+        try {
+            const response = await fetch(
+                "https://oauth2.googleapis.com/token",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams({
+                        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+                        client_secret:
+                            process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
+                        refresh_token: refreshToken,
+                        grant_type: "refresh_token",
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to refresh token: ${response.statusText}`
+                );
+            }
+
+            const data = await response.json();
+            return data.access_token; // The new access token
+        } catch (error) {
+            console.error("Error refreshing token:", error);
+            throw error;
+        }
+    }
+
+    async function enableDailySummary() {
+        try {
+            const { error } = await supabase
+                .from("UserInfo")
+                .update({ send_daily_summary: true })
+                .eq("email", session.user.email);
+            if (error) {
+                throw error;
+            }
+        } catch (error) {
+            console.error("Error updating send_daily_summary", error.message);
+        }
+    }
+
+    async function disableDailySummary() {
+        try {
+            const { error } = await supabase
+                .from("UserInfo")
+                .update({ send_daily_summary: false })
+                .eq("email", session.user.email);
+            if (error) {
+                throw error;
+            }
+        } catch (error) {
+            console.error("Error updating send_daily_summary", error.message);
         }
     }
 
@@ -220,40 +336,24 @@ const Home = ({ session, supabase, isLoading }) => {
                     <button className="sign-out" onClick={() => signOut()}>
                         Sign Out
                     </button>
+                    <br />
+                    <br />
+                    {/*<div className="toggle-daily-summary-container">
+                        <button onClick={enableDailySummary}>
+                            Enable Daily Summary
+                        </button>
+                        <br />
+                        <br />
+                        <button onClick={disableDailySummary}>
+                            Disable Daily Summary
+                        </button>
+                    </div>
+                    */}
                 </div>
             </div>
 
             {/* Event input section */}
             <div className="body-container">
-                <div id="file-upload-btn-container">
-                    <button id="file-upload-btn">
-                        <svg
-                            aria-hidden="true"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            id="file-upload-svg"
-                        >
-                            <path
-                                stroke-width="2"
-                                stroke="#fffffff"
-                                d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H11M13.5 3L19 8.625M13.5 3V7.625C13.5 8.17728 13.9477 8.625 14.5 8.625H19M19 8.625V11.8125"
-                                stroke-linejoin="round"
-                                stroke-linecap="round"
-                            ></path>
-                            <path
-                                stroke-linejoin="round"
-                                stroke-linecap="round"
-                                stroke-width="2"
-                                stroke="#fffffff"
-                                d="M17 15V18M17 21V18M17 18H14M17 18H20"
-                            ></path>
-                        </svg>
-                        ADD FILE
-                    </button>
-                </div>
                 <div>
                     <input
                         className="event-input"
@@ -269,7 +369,6 @@ const Home = ({ session, supabase, isLoading }) => {
                 >
                     Add to Calendar
                 </button>
-                <FileUpload />
             </div>
 
             {/* Confirmation Modal */}
