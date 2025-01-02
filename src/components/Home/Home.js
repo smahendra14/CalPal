@@ -51,6 +51,9 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingEvent, setPendingEvent] = useState(null);
 
+    /**
+     * Log a user out of their Supabase session
+     */
     async function signOut() {
         await supabase.auth.signOut();
     }
@@ -88,7 +91,6 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
         const userLocalTime = DateTime.now()
             .set({ second: 0, millisecond: 0 })
             .toString();
-        console.log(userLocalTime);
 
         try {
             setShowAlert(true);
