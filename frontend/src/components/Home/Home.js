@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./Home.css";
 import { DateTime } from "luxon";
+import FileUpload from "./FileUpload/FileUpload.js";
 
 const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
     if (!event) {
@@ -369,6 +370,7 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                 >
                     Add to Calendar
                 </button>
+                <FileUpload />
             </div>
 
             {/* Confirmation Modal */}
