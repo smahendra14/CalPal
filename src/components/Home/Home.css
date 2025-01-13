@@ -186,3 +186,15 @@ h4 {
   font-size: 20px;
   cursor: pointer;
 }
+
+.email-settings {
+  display: flex;
+  flex-direction: column;
+  width: 25%;
+  background-color: orange;
+  padding: 5px;
+}
+
+.email-setting-btn { 
+  margin-bottom: 8px;
+}

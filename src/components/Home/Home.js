@@ -42,6 +42,15 @@ const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
     );
 };
 
+const EmailTimeModal = ({ closeEmailTimeModal }) => {
+    return (
+        <div>
+            <p>testing the modal pop up</p>
+            <button onClick={closeEmailTimeModal}>Close</button>
+        </div>
+    );
+};
+
 const Home = ({ session, supabase, isLoading, refreshToken }) => {
     const [eventDescription, setEventDescription] = useState("");
     const [showAlert, setShowAlert] = useState(false);
@@ -50,6 +59,7 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
     const [errorMessage, setErrorMessage] = useState("");
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingEvent, setPendingEvent] = useState(null);
+    const [showEmailTimeModal, setShowEmailTimeModal] = useState(false);
 
     /**
      * Log a user out of their Supabase session
@@ -173,7 +183,6 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                 // setErrorMessage(
                 //     "Failed to add event because your session has expired. Please log in again."
                 // );
-
                 // console.log("Access token expired, refreshing...");
                 // accessToken = await getRefreshedToken(refreshToken); // Use your passed-in refresh token
             }
@@ -289,6 +298,15 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
         }
     }
 
+    async function changeSummaryTime() {
+        setShowEmailTimeModal(true);
+        console.log("pressed Change Summary Time button");
+    }
+
+    const closeEmailTimeModal = () => {
+        setShowEmailTimeModal(false);
+    };
+
     const cancelAddEvent = () => {
         setShowConfirmModal(false);
         setPendingEvent(null);
@@ -300,45 +318,46 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
     }
 
     return (
-        <div className="home-container">
-            {/* Error Alert */}
-            {showErrorAlert && (
-                <div className="alert error">
-                    {errorMessage}
-                    <button
-                        className="close-error"
-                        onClick={() => setShowErrorAlert(false)}
-                    >
-                        ×
-                    </button>
-                </div>
-            )}
+        
+            <div className="home-container">
+                {/* Error Alert */}
+                {showErrorAlert && (
+                    <div className="alert error">
+                        {errorMessage}
+                        <button
+                            className="close-error"
+                            onClick={() => setShowErrorAlert(false)}
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
 
-            {/* Header */}
-            <div className="header-bar">
-                <h1 className="title-text">CalPal</h1>
-                {showAlert && (
-                    <div className="alert" id="alert">
-                        Adding event to your calendar...
-                    </div>
-                )}
-                {showSuccess && (
-                    <div className="alert">
-                        Event added! Check your Google Calendar to confirm
-                    </div>
-                )}
-                <div className="account-actions">
-                    <h4 id="description">
-                        You are currently linked to the primary calendar
-                        associated with:
-                    </h4>
-                    <h4>{session.user.email}</h4>
-                    <button className="sign-out" onClick={() => signOut()}>
-                        Sign Out
-                    </button>
-                    <br />
-                    <br />
-                    {/*<div className="toggle-daily-summary-container">
+                {/* Header */}
+                <div className="header-bar">
+                    <h1 className="title-text">CalPal</h1>
+                    {showAlert && (
+                        <div className="alert" id="alert">
+                            Adding event to your calendar...
+                        </div>
+                    )}
+                    {showSuccess && (
+                        <div className="alert">
+                            Event added! Check your Google Calendar to confirm
+                        </div>
+                    )}
+                    <div className="account-actions">
+                        <h4 id="description">
+                            You are currently linked to the primary calendar
+                            associated with:
+                        </h4>
+                        <h4>{session.user.email}</h4>
+                        <button className="sign-out" onClick={() => signOut()}>
+                            Sign Out
+                        </button>
+                        <br />
+                        <br />
+                        {/*<div className="toggle-daily-summary-container">
                         <button onClick={enableDailySummary}>
                             Enable Daily Summary
                         </button>
@@ -349,36 +368,56 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
                         </button>
                     </div>
                     */}
+                    </div>
                 </div>
-            </div>
+                <div className="email-settings">
+                    <p>Email Summary Settings</p>
+                    <button className="email-setting-btn">
+                        Enable Daily Summary
+                    </button>
+                    <button className="email-setting-btn">
+                        Disable Daily Summary
+                    </button>
+                    <button
+                        className="email-setting-btn"
+                        onClick={changeSummaryTime}
+                    >
+                        Change Summary Time
+                    </button>
+                </div>
 
-            {/* Event input section */}
-            <div className="body-container">
-                <div>
-                    <input
-                        className="event-input"
-                        placeholder="Enter event description i.e. practice coding on the 25th at 10 am"
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyPress}
-                        value={eventDescription}
+                {/* Event input section */}
+                <div className="body-container">
+                    <div>
+                        <input
+                            className="event-input"
+                            placeholder="Enter event description i.e. practice coding on the 25th at 10 am"
+                            onChange={handleInputChange}
+                            onKeyDown={handleKeyPress}
+                            value={eventDescription}
+                        />
+                    </div>
+                    <button
+                        onClick={prepareEventForConfirmation}
+                        className="add-to-calendar-button"
+                    >
+                        Add to Calendar
+                    </button>
+                </div>
+
+                {/* Confirmation Modal */}
+                {showConfirmModal && (
+                    <ConfirmationModal
+                        event={pendingEvent}
+                        onConfirm={confirmAddEvent}
+                        onCancel={cancelAddEvent}
                     />
-                </div>
-                <button
-                    onClick={prepareEventForConfirmation}
-                    className="add-to-calendar-button"
-                >
-                    Add to Calendar
-                </button>
-            </div>
+                )}
 
-            {/* Confirmation Modal */}
-            {showConfirmModal && (
-                <ConfirmationModal
-                    event={pendingEvent}
-                    onConfirm={confirmAddEvent}
-                    onCancel={cancelAddEvent}
-                />
-            )}
+                {/* Email Time Setting Modal */}
+                {showEmailTimeModal && (
+                    <EmailTimeModal onModalClose={closeEmailTimeModal} />
+                )}
         </div>
     );
 };
