@@ -1,0 +1,111 @@
+.settings-container {
+    font-family: "Arial", sans-serif;
+    width: 80%;
+    max-width: 600px;
+    margin: 20px auto;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.settings-header {
+    background-color: #ff9900;
+    color: #000;
+    padding: 16px 24px;
+    text-align: left;
+}
+
+.settings-header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.settings-header p {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+.settings-content {
+    padding: 16px 24px;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.setting-label {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.setting-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toggle-btn {
+    width: 50px;
+    height: 24px;
+    border-radius: 12px;
+    position: relative;
+    background: #ccc;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    outline: none;
+    transition: background 0.3s;
+}
+
+.toggle-btn.enabled {
+    background: #32cd32;
+}
+
+.toggle-btn.disabled {
+    background: #888;
+}
+
+.toggle-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    transition: transform 0.3s;
+}
+
+.toggle-btn.enabled .toggle-thumb {
+    transform: translateX(26px);
+}
+
+.time-select {
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.save-button {
+    display: block;
+    margin: 16px auto;
+    background-color: #000;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.save-button:hover {
+    background-color: #333;
+}
