@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import {
     useSession,
@@ -7,6 +8,8 @@ import {
 } from "@supabase/auth-helpers-react";
 import LandingPage from "./components/LandingPage/LandingPage.js";
 import Home from "./components/Home/Home.js";
+import Settings from "./components/Settings/Settings.js";
+import Sidebar from "./components/Sidebar/Sidebar.js";
 
 /**
  * Stores the refresh token of the signed-in user in the database
@@ -28,6 +31,14 @@ const storeRefreshTokenInDatabase = async (supabase, email, refreshToken) => {
     } else {
         console.log("Refresh token stored successfully!");
     }
+};
+
+// Protected Route component to handle authentication
+const ProtectedRoute = ({ children, session }) => {
+    if (!session) {
+        return <Navigate to="/" replace />;
+    }
+    return children;
 };
 
 function App() {
@@ -53,27 +64,64 @@ function App() {
     }
 
     return (
-        <div className="App">
-            <div>
+        <BrowserRouter>
+            <div className="App">
                 {session ? (
-                    <Home
-                        session={session}
-                        supabase={supabase}
-                        isLoading={isLoading}
-                        refreshToken={refreshToken}
-                        setRefreshToken={setRefreshToken}
-                    />
+                    <div className="app-container">
+                        <Sidebar supabase={supabase} session={session} />
+                        <div className="main-content">
+                            <Routes>
+                                <Route
+                                    path="/"
+                                    element={
+                                        <ProtectedRoute session={session}>
+                                            <Home
+                                                session={session}
+                                                supabase={supabase}
+                                                isLoading={isLoading}
+                                                refreshToken={refreshToken}
+                                                setRefreshToken={
+                                                    setRefreshToken
+                                                }
+                                            />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/settings"
+                                    element={
+                                        <ProtectedRoute session={session}>
+                                            <Settings
+                                                session={session}
+                                                supabase={supabase}
+                                            />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="*"
+                                    element={<Navigate to="/" replace />}
+                                />
+                            </Routes>
+                        </div>
+                    </div>
                 ) : (
-                    <>
-                        <LandingPage
-                            supabase={supabase}
-                            refreshToken={refreshToken}
-                            setRefreshToken={setRefreshToken}
+                    <Routes>
+                        <Route
+                            path="/"
+                            element={
+                                <LandingPage
+                                    supabase={supabase}
+                                    refreshToken={refreshToken}
+                                    setRefreshToken={setRefreshToken}
+                                />
+                            }
                         />
-                    </>
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
                 )}
             </div>
-        </div>
+        </BrowserRouter>
     );
 }
 
