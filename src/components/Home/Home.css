@@ -1,6 +1,7 @@
 .main-container {
     display: flex;
-    height: 100vh;
+    height: 90vh;
+    flex-direction: column;
 }
 
 .home-container {
@@ -186,7 +187,28 @@ h4 {
     cursor: pointer;
 }
 
-.main-container {
-    display: flex;
-    flex-direction: row;
+.footer {
+    width: 100%;
+    margin-top: auto;
+}
+
+.footer-content {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+}
+
+.footer-link {
+    color: #666;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+    color: #333;
+}
+
+.footer-separator {
+    margin: 0 12px;
+    color: #666;
 }
