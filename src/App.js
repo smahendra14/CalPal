@@ -10,6 +10,8 @@ import LandingPage from "./components/LandingPage/LandingPage.js";
 import Home from "./components/Home/Home.js";
 import Settings from "./components/Settings/Settings.js";
 import Sidebar from "./components/Sidebar/Sidebar.js";
+import PrivacyPolicy from "./components/Legal/PrivacyPolicy/PrivacyPolicy.js";
+import TermsOfService from "./components/Legal/TermsOfService/TermsOfService.js";
 
 /**
  * Stores the refresh token of the signed-in user in the database
@@ -99,6 +101,14 @@ function App() {
                                     }
                                 />
                                 <Route
+                                    path="/privacy"
+                                    element={<PrivacyPolicy />}
+                                />
+                                <Route
+                                    path="/terms"
+                                    element={<TermsOfService />}
+                                />
+                                <Route
                                     path="*"
                                     element={<Navigate to="/" replace />}
                                 />
@@ -117,6 +127,8 @@ function App() {
                                 />
                             }
                         />
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/terms" element={<TermsOfService />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 )}

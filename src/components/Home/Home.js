@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./Home.css";
 import { DateTime } from "luxon";
 import Sidebar from "../Sidebar/Sidebar.js";
+import { Link } from "react-router-dom";
 
 const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
     if (!event) {
@@ -325,21 +326,13 @@ const Home = ({ session, supabase, isLoading, refreshToken }) => {
             {/* Footer */}
             <footer className="footer">
                 <div className="footer-content">
-                    <a
-                        href="https://docs.google.com/document/d/17Task_puH65hTnR1ij2H8a7gA6uZ59hR7PWTnqEzZEo/edit?pli=1&tab=t.0"
-                        className="footer-link"
-                        target="_blank"
-                    >
+                    <Link to="/privacy" className="footer-link">
                         Privacy Policy
-                    </a>
+                    </Link>
                     <span className="footer-separator">•</span>
-                    <a
-                        href="https://docs.google.com/document/d/1gz9F2cWr-sLI9FRhim5uNTeMHQFApSxckXZ0H7BhkVA/edit?tab=t.0"
-                        className="footer-link"
-                        target="_blank"
-                    >
+                    <Link to="/terms" className="footer-link">
                         Terms of Service
-                    </a>
+                    </Link>
                 </div>
             </footer>
         </div>
