@@ -1,6 +1,7 @@
 import React from "react";
 import googleLogo from "../../assets/google-logo.png";
 import "./LandingPage.css";
+import { Link } from "react-router-dom";
 
 const LandingPage = ({ supabase, refreshToken, setRefreshToken }) => {
     async function googleSignIn() {
@@ -51,6 +52,11 @@ const LandingPage = ({ supabase, refreshToken, setRefreshToken }) => {
                 />
                 Sign In With Google
             </button>
+            <footer className="footer">
+                <Link to="/privacy" className="privacy-link">
+                    Privacy Policy
+                </Link>
+            </footer>
         </div>
     );
 };

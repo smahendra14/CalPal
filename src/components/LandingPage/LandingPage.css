@@ -64,3 +64,22 @@
     height: 3rem;
     width: 3rem;
 }
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    text-align: center;
+}
+
+.privacy-link {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.privacy-link:hover {
+    text-decoration: underline;
+}
