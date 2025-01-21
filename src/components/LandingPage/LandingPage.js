@@ -52,7 +52,7 @@ const LandingPage = ({ supabase, refreshToken, setRefreshToken }) => {
                 />
                 Sign In With Google
             </button>
-            <footer className="footer">
+            <footer className="landing-footer">
                 <Link to="/privacy" className="privacy-link">
                     Privacy Policy
                 </Link>
