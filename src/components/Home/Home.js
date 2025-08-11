@@ -1,338 +1,109 @@
-import React, { useState } from "react";
-import "./Home.css";
-import { DateTime } from "luxon";
-import Sidebar from "../Sidebar/Sidebar.js";
+// file: Home.jsx
+
+import React, { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
+import "./Home.css"; // We'll provide updated styles for this
 import { Link } from "react-router-dom";
 
-const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
-    if (!event) {
-        return null;
-    }
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <h2>Confirm Event Details</h2>
-                <p>Please review the event before adding to your calendar:</p>
+// The Home component is now our main Chat Interface
+const Home = ({ session }) => { // Supabase, isLoading, etc. are no longer needed for the chat
+    // State for the conversation history, the current input, and the connection status
+    const [messages, setMessages] = useState([]);
+    const [inputValue, setInputValue] = useState("");
+    const [status, setStatus] = useState("Connecting...");
 
-                <div className="event-details">
-                    <p>
-                        <strong>Event:</strong> {event.summary}
-                    </p>
-                    <p>
-                        <strong>Start:</strong>{" "}
-                        {new Date(event.start.dateTime).toLocaleString()}
-                    </p>
-                    <p>
-                        <strong>End:</strong>{" "}
-                        {new Date(event.end.dateTime).toLocaleString()}
-                    </p>
-                </div>
+    // Refs to hold the socket instance and a reference to the end of the message list for auto-scrolling
+    const socketRef = useRef(null);
+    const messagesEndRef = useRef(null);
 
-                <div className="modal-actions">
-                    <button onClick={onCancel} className="modal-button cancel">
-                        Cancel
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        className="modal-button confirm"
-                    >
-                        Confirm and Add
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
+    // This effect runs once when the component mounts to set up the WebSocket connection
+    useEffect(() => {
+        // Connect to your backend server.
+        // IMPORTANT: In production, replace 'http://localhost:8000' with your Vercel backend URL.
+        const socket = io("http://localhost:8000");
+        socketRef.current = socket;
 
-const Home = ({ session, supabase, isLoading, refreshToken }) => {
-    const [eventDescription, setEventDescription] = useState("");
-    const [showAlert, setShowAlert] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
-    const [showErrorAlert, setShowErrorAlert] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [pendingEvent, setPendingEvent] = useState(null);
+        // --- Event Listeners ---
+        socket.on("connect", () => setStatus("Connected"));
+        socket.on("disconnect", () => setStatus("Disconnected"));
+        socket.on("status_update", (msg) => setStatus(msg));
 
-    const handleInputChange = (e) => {
-        setEventDescription(e.target.value);
+        // This listener handles the final response from the agent
+        socket.on("chat_response", (responseMsg) => {
+            const botMessage = { author: "bot", text: responseMsg };
+            setMessages((prevMessages) => [...prevMessages, botMessage]);
+            setStatus("Connected"); // Reset status after a response is received
+        });
 
-        // Clear any previous error message once the user starts typing again
-        if (showErrorAlert) {
-            setShowErrorAlert(false);
-            setErrorMessage("");
+        // Cleanup function to disconnect the socket when the component unmounts
+        return () => {
+            socket.disconnect();
+        };
+    }, []); // The empty dependency array [] ensures this runs only once.
+
+    // This effect handles auto-scrolling to the latest message
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    const handleSendMessage = (e) => {
+        e.preventDefault();
+        if (inputValue.trim() && socketRef.current && status !== 'Thinking...') {
+            // Add the user's message to the UI immediately
+            const userMessage = { author: "user", text: inputValue };
+            setMessages((prevMessages) => [...prevMessages, userMessage]);
+
+            // Emit the message to the backend agent
+            socketRef.current.emit("chat_message", inputValue);
+
+            // Clear the input field
+            setInputValue("");
         }
     };
-
-    const handleKeyPress = (e) => {
-        if (e.key === "Enter") {
-            if (showConfirmModal) {
-                e.preventDefault();
-                confirmAddEvent();
-            } else {
-                e.preventDefault();
-                setShowErrorAlert(false);
-                setErrorMessage("");
-                prepareEventForConfirmation();
-            }
-        }
-    };
-
-    async function prepareEventForConfirmation() {
-        // Reset previous errors
-        setShowErrorAlert(false);
-        setErrorMessage("");
-
-        // pass in local time zone to backend for relative timings
-        const userLocalTime = DateTime.now()
-            .set({ second: 0, millisecond: 0 })
-            .toString();
-
-        try {
-            setShowAlert(true);
-            const response = await fetch(
-                "https://calpal-backend-deploy.vercel.app/api/calendar/extractSingleEventInfo",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        eventDescription: eventDescription,
-                        userLocalTime: userLocalTime,
-                    }),
-                }
-            );
-            if (!response.ok) {
-                throw new Error("Failed to get event information");
-            }
-
-            const extractResponse = await response.json();
-
-            // Validate extracted information
-            if (
-                !extractResponse.title ||
-                !extractResponse.calendarStartInputTime ||
-                !extractResponse.calendarEndInputTime
-            ) {
-                throw new Error(
-                    "Could not parse event details. Please check your description."
-                );
-            }
-
-            const event = {
-                summary: extractResponse.title + " (from CalPal)",
-                start: {
-                    dateTime: extractResponse.calendarStartInputTime,
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                },
-                end: {
-                    dateTime: extractResponse.calendarEndInputTime,
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                },
-            };
-
-            // Store pending event and show confirmation modal
-            setPendingEvent(event);
-            setShowConfirmModal(true);
-            setShowAlert(false);
-            setEventDescription("");
-        } catch (error) {
-            console.error("Error preparing event:", error);
-            setShowAlert(false);
-            setShowErrorAlert(true);
-            setErrorMessage(
-                "Unable to parse event. Please try a different description."
-            );
-        }
-    }
-
-    async function confirmAddEvent() {
-        if (!pendingEvent) {
-            return;
-        }
-
-        try {
-            let accessToken = session.provider_token;
-            // Test the current token by making a lightweight request or assuming expiry
-            try {
-                const testResponse = await fetch(
-                    "https://www.googleapis.com/oauth2/v3/tokeninfo",
-                    { headers: { Authorization: `Bearer ${accessToken}` } }
-                );
-                if (!testResponse.ok) {
-                    throw new Error("Token is invalid");
-                }
-            } catch (error) {
-                // Refresh the token if the current one is invalid
-                // setShowErrorAlert(true);
-                // setErrorMessage(
-                //     "Failed to add event because your session has expired. Please log in again."
-                // );
-                // console.log("Access token expired, refreshing...");
-                // accessToken = await getRefreshedToken(refreshToken); // Use your passed-in refresh token
-            }
-
-            const response = await fetch(
-                "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: "Bearer " + accessToken,
-                    },
-                    body: JSON.stringify(pendingEvent),
-                }
-            );
-
-            if (!response.ok) {
-                // Check for 401 unauthorized
-                if (response.status === 401 || response.status === 403) {
-                    setErrorMessage(
-                        "Failed to add event because your session has expired. Please try logging in again."
-                    );
-                    setShowConfirmModal(false);
-                    setShowErrorAlert(true);
-                    return;
-                }
-
-                // Check for a specific error like 400 Bad Request
-                const errorDetails = await response.json();
-                throw new Error(
-                    `Failed to add event: ${
-                        errorDetails.error.message || "Unknown error"
-                    }`
-                );
-            }
-
-            const data = await response.json();
-
-            // Close modal and show success
-            setShowConfirmModal(false);
-            setShowSuccess(true);
-            setPendingEvent(null);
-
-            setTimeout(() => {
-                setShowSuccess(false);
-            }, 4000);
-        } catch (error) {
-            console.error("Error adding event:", error);
-            setShowErrorAlert(true);
-            setErrorMessage(
-                "Failed to add event to calendar. Please try again."
-            );
-        }
-    }
-
-    async function getRefreshedToken(refreshToken) {
-        try {
-            const response = await fetch(
-                "https://oauth2.googleapis.com/token",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                    body: new URLSearchParams({
-                        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-                        client_secret:
-                            process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
-                        refresh_token: refreshToken,
-                        grant_type: "refresh_token",
-                    }),
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(
-                    `Failed to refresh token: ${response.statusText}`
-                );
-            }
-
-            const data = await response.json();
-            return data.access_token; // The new access token
-        } catch (error) {
-            console.error("Error refreshing token:", error);
-            throw error;
-        }
-    }
-
-    const cancelAddEvent = () => {
-        setShowConfirmModal(false);
-        setPendingEvent(null);
-        setEventDescription("");
-    };
-
-    if (isLoading) {
-        return <></>; // used to get around flickering that occurs when you reload the page when signed in
-    }
 
     return (
         <div className="main-container">
-            <div className="home-container">
-                {/* Error Alert */}
-                {showErrorAlert && (
-                    <div className="alert error">
-                        {errorMessage}
-                        <button
-                            className="close-error"
-                            onClick={() => setShowErrorAlert(false)}
-                        >
-                            ×
-                        </button>
-                    </div>
-                )}
-
-                {/* Header */}
-                <div className="header-bar">
-                    {showAlert && (
-                        <div className="alert" id="alert">
-                            Adding event to your calendar...
-                        </div>
-                    )}
-                    {showSuccess && (
-                        <div className="alert">
-                            Event added! Check your Google Calendar to confirm
-                        </div>
-                    )}
+            <div className="chat-interface">
+                {/* Header Section */}
+                <div className="chat-header">
+                    <h2>CalPal Assistant</h2>
+                    <p className={`status ${status.toLowerCase().replace(/\s/g, '-')}`}>
+                        {status}
+                    </p>
                 </div>
 
-                {/* Event input section */}
-                <div className="body-container">
-                    <div>
-                        <input
-                            className="event-input"
-                            placeholder="Enter event description i.e. practice coding on the 25th at 10 am"
-                            onChange={handleInputChange}
-                            onKeyDown={handleKeyPress}
-                            value={eventDescription}
-                        />
-                    </div>
-                    <button
-                        onClick={prepareEventForConfirmation}
-                        className="add-to-calendar-button"
-                    >
-                        Add to Calendar
-                    </button>
+                {/* Messages Window */}
+                <div className="messages-window">
+                    {messages.map((msg, index) => (
+                        <div key={index} className={`message-wrapper ${msg.author}`}>
+                            <div className="message-bubble">{msg.text}</div>
+                        </div>
+                    ))}
+                    {/* Empty div to which we can scroll */}
+                    <div ref={messagesEndRef} />
                 </div>
 
-                {/* Confirmation Modal */}
-                {showConfirmModal && (
-                    <ConfirmationModal
-                        event={pendingEvent}
-                        onConfirm={confirmAddEvent}
-                        onCancel={cancelAddEvent}
+                {/* Input Form */}
+                <form className="input-form" onSubmit={handleSendMessage}>
+                    <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Ask me to schedule an event or look up a stock..."
+                        disabled={status === "Thinking..."}
                     />
-                )}
+                    <button type="submit" disabled={status === "Thinking..."}>
+                        Send
+                    </button>
+                </form>
             </div>
-            {/* Footer */}
+            
+            {/* Footer remains the same */}
             <footer className="footer">
                 <div className="footer-content">
-                    <Link to="/privacy" className="footer-link">
-                        Privacy Policy
-                    </Link>
+                    <Link to="/privacy" className="footer-link">Privacy Policy</Link>
                     <span className="footer-separator">•</span>
-                    <Link to="/terms" className="footer-link">
-                        Terms of Service
-                    </Link>
+                    <Link to="/terms" className="footer-link">Terms of Service</Link>
                 </div>
             </footer>
         </div>
