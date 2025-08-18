@@ -1,104 +1,179 @@
 // file: Home.jsx
 
 import React, { useState, useEffect, useRef } from "react";
-import { io } from "socket.io-client";
-import "./Home.css"; // We'll provide updated styles for this
+// REMOVED: import { io } from "socket.io-client";
+import "./Home.css";
 import { Link } from "react-router-dom";
 
-// The Home component is now our main Chat Interface
-const Home = ({ session }) => { // Supabase, isLoading, etc. are no longer needed for the chat
-    // State for the conversation history, the current input, and the connection status
+// This is now just for UI autocomplete convenience
+const TOOL_OPTIONS = ["getCalendarEvents", "addCalendarEvents"];
+
+const Home = () => {
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState("");
-    const [status, setStatus] = useState("Connecting...");
+    const [status, setStatus] = useState("Idle"); // Simplified status
+    const [threadId, setThreadId] = useState(null); // State to hold the conversation ID
 
-    // Refs to hold the socket instance and a reference to the end of the message list for auto-scrolling
-    const socketRef = useRef(null);
+    const [showToolPopup, setShowToolPopup] = useState(false);
+    const [filteredTools, setFilteredTools] = useState(TOOL_OPTIONS);
+    const [selectedToolIdx, setSelectedToolIdx] = useState(0);
+
+    // REMOVED: const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const inputRef = useRef(null);
 
-    // This effect runs once when the component mounts to set up the WebSocket connection
+    // This effect runs once to generate a unique ID for the chat session
     useEffect(() => {
-        // Connect to your backend server.
-        // IMPORTANT: In production, replace 'http://localhost:8000' with your Vercel backend URL.
-        const socket = io("http://localhost:8000");
-        socketRef.current = socket;
+        setThreadId(`thread_${crypto.randomUUID()}`);
+    }, []);
 
-        // --- Event Listeners ---
-        socket.on("connect", () => setStatus("Connected"));
-        socket.on("disconnect", () => setStatus("Disconnected"));
-        socket.on("status_update", (msg) => setStatus(msg));
-
-        // This listener handles the final response from the agent
-        socket.on("chat_response", (responseMsg) => {
-            const botMessage = { author: "bot", text: responseMsg };
-            setMessages((prevMessages) => [...prevMessages, botMessage]);
-            setStatus("Connected"); // Reset status after a response is received
-        });
-
-        // Cleanup function to disconnect the socket when the component unmounts
-        return () => {
-            socket.disconnect();
-        };
-    }, []); // The empty dependency array [] ensures this runs only once.
-
-    // This effect handles auto-scrolling to the latest message
+    // This effect handles auto-scrolling to the latest message (no changes needed)
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
-
-    const handleSendMessage = (e) => {
+    
+    // NEW: The core logic for sending a message and handling the response
+    const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (inputValue.trim() && socketRef.current && status !== 'Thinking...') {
-            // Add the user's message to the UI immediately
-            const userMessage = { author: "user", text: inputValue };
-            setMessages((prevMessages) => [...prevMessages, userMessage]);
+        if (!inputValue.trim() || status === "Thinking..." || !threadId) {
+            return;
+        }
 
-            // Emit the message to the backend agent
-            socketRef.current.emit("chat_message", inputValue);
+        const userMessage = { author: "user", text: inputValue };
+        setMessages((prevMessages) => [...prevMessages, userMessage]);
+        
+        const currentInput = inputValue;
+        setInputValue("");
+        setStatus("Thinking...");
 
-            // Clear the input field
-            setInputValue("");
+        try {
+            // Make the API call to your Express backend using fetch
+            const response = await fetch("http://localhost:8000/generate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    prompt: currentInput,
+                    thread_id: threadId,
+                }),
+            });
+
+            if (!response.ok) {
+                // Handle HTTP errors like 500, 404 etc.
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+
+            const botResponseText = await response.json();
+
+            // Add the bot's successful response to the UI
+            const botMessage = { author: "bot", text: botResponseText };
+            setMessages((prevMessages) => [...prevMessages, botMessage]);
+
+        } catch (error) {
+            console.error("Error fetching from agent:", error);
+            // Add an error message to the chat window for the user
+            const errorMessage = { author: "bot", text: "Sorry, I couldn't get a response. Please try again." };
+            setMessages((prevMessages) => [...prevMessages, errorMessage]);
+        } finally {
+            // Reset status whether the API call succeeded or failed
+            setStatus("Idle");
         }
     };
+    
+    // All other functions and the JSX below can remain exactly the same.
+    // I am including them here for a complete, copy-paste-ready file.
 
+    const handleInputChange = (e) => {
+        setInputValue(e.target.value);
+    };
+
+    useEffect(() => {
+        const match = inputValue.match(/@(\w*)$/);
+        if (match) {
+            const query = match[1].toLowerCase();
+            const filtered = TOOL_OPTIONS.filter((tool) => tool.startsWith(query));
+            setFilteredTools(filtered);
+            setShowToolPopup(filtered.length > 0);
+            setSelectedToolIdx(0);
+        } else {
+            setShowToolPopup(false);
+        }
+    }, [inputValue]);
+    
+    const handleToolSelect = (tool) => {
+        setInputValue((prev) => prev.replace(/@\w*$/, `@${tool} `));
+        setShowToolPopup(false);
+        inputRef.current?.focus();
+    };
+
+    const handleInputKeyDown = (e) => {
+        if (showToolPopup && filteredTools.length > 0) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                handleToolSelect(filteredTools[selectedToolIdx]);
+            } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setSelectedToolIdx((idx) => (idx + 1) % filteredTools.length);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setSelectedToolIdx((idx) => (idx - 1 + filteredTools.length) % filteredTools.length);
+            } else if (e.key === "Escape") {
+                setShowToolPopup(false);
+            }
+        }
+    };
+    
     return (
-        <div className="main-container">
-            <div className="chat-interface">
-                {/* Header Section */}
-                <div className="chat-header">
+        <div className="main-container chat-bg">
+            <div className="chat-interface styled-chat">
+                <div className="chat-header styled-header">
                     <h2>CalPal Assistant</h2>
-                    <p className={`status ${status.toLowerCase().replace(/\s/g, '-')}`}>
-                        {status}
-                    </p>
+                    <p className={`status ${status.toLowerCase()}`}>{status}</p>
                 </div>
-
-                {/* Messages Window */}
-                <div className="messages-window">
+                <div className="messages-window styled-messages">
                     {messages.map((msg, index) => (
                         <div key={index} className={`message-wrapper ${msg.author}`}>
-                            <div className="message-bubble">{msg.text}</div>
+                            <div className={`message-bubble ${msg.author}-bubble`}>
+                                {msg.text}
+                            </div>
                         </div>
                     ))}
-                    {/* Empty div to which we can scroll */}
                     <div ref={messagesEndRef} />
                 </div>
-
-                {/* Input Form */}
-                <form className="input-form" onSubmit={handleSendMessage}>
+                <form
+                    className="input-form styled-input-form"
+                    onSubmit={handleSendMessage}
+                    style={{ position: "relative" }}
+                >
                     <input
+                        ref={inputRef}
                         type="text"
                         value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Ask me to schedule an event or look up a stock..."
+                        onChange={handleInputChange}
+                        onKeyDown={handleInputKeyDown}
+                        placeholder="Ask me to schedule an event..."
                         disabled={status === "Thinking..."}
+                        autoComplete="off"
                     />
-                    <button type="submit" disabled={status === "Thinking..."}>
+                    <button type="submit" disabled={status === "Thinking..."} className="send-btn">
                         Send
                     </button>
+                    {showToolPopup && (
+                         <div className="tool-popup">
+                             {filteredTools.map((tool, idx) => (
+                                 <div
+                                     key={tool}
+                                     className={`tool-option${idx === selectedToolIdx ? " selected" : ""}`}
+                                     onMouseDown={() => handleToolSelect(tool)}
+                                 >
+                                     @{tool}
+                                 </div>
+                             ))}
+                         </div>
+                     )}
                 </form>
             </div>
-            
-            {/* Footer remains the same */}
             <footer className="footer">
                 <div className="footer-content">
                     <Link to="/privacy" className="footer-link">Privacy Policy</Link>
