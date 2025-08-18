@@ -1,186 +1,154 @@
-// file: Home.jsx
-
 import React, { useState, useEffect, useRef } from "react";
-// REMOVED: import { io } from "socket.io-client";
-import "./Home.css";
+import "./Home.css"; // Make sure you have styles for the modal
 import { Link } from "react-router-dom";
 
-// This is now just for UI autocomplete convenience
-const TOOL_OPTIONS = ["getCalendarEvents", "addCalendarEvents"];
+// --- Confirmation Modal Component ---
+const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
+    if (!event) return null;
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <h2>Confirm Event Details</h2>
+                <p>Does this look correct?</p>
+                <div className="event-details">
+                    <p><strong>Event:</strong> {event.summary}</p>
+                    <p><strong>Start:</strong> {new Date(event.start.dateTime).toLocaleString()}</p>
+                    <p><strong>End:</strong> {new Date(event.end.dateTime).toLocaleString()}</p>
+                </div>
+                <div className="modal-actions">
+                    <button onClick={onCancel} className="modal-button cancel">Cancel</button>
+                    <button onClick={onConfirm} className="modal-button confirm">Confirm & Add</button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
+// --- Main Chat Component ---
 const Home = () => {
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState("");
-    const [status, setStatus] = useState("Idle"); // Simplified status
-    const [threadId, setThreadId] = useState(null); // State to hold the conversation ID
+    const [status, setStatus] = useState("Idle");
+    const [threadId, setThreadId] = useState(null);
+    
+    // State for the confirmation flow
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingEvent, setPendingEvent] = useState(null);
 
-    const [showToolPopup, setShowToolPopup] = useState(false);
-    const [filteredTools, setFilteredTools] = useState(TOOL_OPTIONS);
-    const [selectedToolIdx, setSelectedToolIdx] = useState(0);
-
-    // REMOVED: const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
-    const inputRef = useRef(null);
 
-    // This effect runs once to generate a unique ID for the chat session
     useEffect(() => {
         setThreadId(`thread_${crypto.randomUUID()}`);
     }, []);
 
-    // This effect handles auto-scrolling to the latest message (no changes needed)
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
-    
-    // NEW: The core logic for sending a message and handling the response
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!inputValue.trim() || status === "Thinking..." || !threadId) {
-            return;
-        }
 
-        const userMessage = { author: "user", text: inputValue };
-        setMessages((prevMessages) => [...prevMessages, userMessage]);
-        
-        const currentInput = inputValue;
+    const handleAgentResponse = (response) => {
+        try {
+            // Check if the agent's response contains a JSON object for confirmation
+            const parsedResponse = JSON.parse(response);
+            if (parsedResponse.needs_confirmation && parsedResponse.event_details) {
+                setPendingEvent(parsedResponse.event_details);
+                setShowConfirmModal(true);
+                // Add a message to the chat to prompt the user
+                const botMessage = { author: "bot", text: "I've prepared the event details for you. Please review them." };
+                setMessages((prev) => [...prev, botMessage]);
+                return; // Stop further processing
+            }
+        } catch (e) {
+            // It's not a JSON object, so treat it as a regular text response
+            const botMessage = { author: "bot", text: response };
+            setMessages((prev) => [...prev, botMessage]);
+        }
+    };
+
+    const handleSendMessage = async (prompt) => {
+        if (!prompt || status === "Thinking...") return;
+
+        const userMessage = { author: "user", text: prompt };
+        setMessages((prev) => [...prev, userMessage]);
         setInputValue("");
         setStatus("Thinking...");
 
         try {
-            // Make the API call to your Express backend using fetch
+            // TODO: Get the real JWT from your auth provider
+            const jwt = "YOUR_SESSION_JWT_HERE";
+
             const response = await fetch("http://localhost:8000/generate", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${jwt}`,
                 },
-                body: JSON.stringify({
-                    prompt: currentInput,
-                    thread_id: threadId,
-                }),
+                body: JSON.stringify({ prompt, thread_id: threadId }),
             });
 
-            if (!response.ok) {
-                // Handle HTTP errors like 500, 404 etc.
-                throw new Error(`Server responded with status: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error("Server error");
+            
             const botResponseText = await response.json();
-
-            // Add the bot's successful response to the UI
-            const botMessage = { author: "bot", text: botResponseText };
-            setMessages((prevMessages) => [...prevMessages, botMessage]);
+            handleAgentResponse(botResponseText);
 
         } catch (error) {
-            console.error("Error fetching from agent:", error);
-            // Add an error message to the chat window for the user
-            const errorMessage = { author: "bot", text: "Sorry, I couldn't get a response. Please try again." };
-            setMessages((prevMessages) => [...prevMessages, errorMessage]);
+            const errorMessage = { author: "bot", text: "Sorry, I ran into an error." };
+            setMessages((prev) => [...prev, errorMessage]);
         } finally {
-            // Reset status whether the API call succeeded or failed
             setStatus("Idle");
         }
     };
     
-    // All other functions and the JSX below can remain exactly the same.
-    // I am including them here for a complete, copy-paste-ready file.
-
-    const handleInputChange = (e) => {
-        setInputValue(e.target.value);
+    // --- Modal Action Handlers ---
+    const confirmAddEvent = () => {
+        // Send the confirmation and the pending event details back to the agent
+        const confirmationPrompt = `Yes, please create the event with these details: ${JSON.stringify(pendingEvent)}`;
+        handleSendMessage(confirmationPrompt);
+        setShowConfirmModal(false);
+        setPendingEvent(null);
     };
 
-    useEffect(() => {
-        const match = inputValue.match(/@(\w*)$/);
-        if (match) {
-            const query = match[1].toLowerCase();
-            const filtered = TOOL_OPTIONS.filter((tool) => tool.startsWith(query));
-            setFilteredTools(filtered);
-            setShowToolPopup(filtered.length > 0);
-            setSelectedToolIdx(0);
-        } else {
-            setShowToolPopup(false);
-        }
-    }, [inputValue]);
-    
-    const handleToolSelect = (tool) => {
-        setInputValue((prev) => prev.replace(/@\w*$/, `@${tool} `));
-        setShowToolPopup(false);
-        inputRef.current?.focus();
+    const cancelAddEvent = () => {
+        // Send a cancellation message to the agent so it knows the context
+        handleSendMessage("Never mind, please cancel the event creation.");
+        setShowConfirmModal(false);
+        setPendingEvent(null);
     };
 
-    const handleInputKeyDown = (e) => {
-        if (showToolPopup && filteredTools.length > 0) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                handleToolSelect(filteredTools[selectedToolIdx]);
-            } else if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setSelectedToolIdx((idx) => (idx + 1) % filteredTools.length);
-            } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setSelectedToolIdx((idx) => (idx - 1 + filteredTools.length) % filteredTools.length);
-            } else if (e.key === "Escape") {
-                setShowToolPopup(false);
-            }
-        }
-    };
-    
     return (
         <div className="main-container chat-bg">
+            <ConfirmationModal
+                event={pendingEvent}
+                onConfirm={confirmAddEvent}
+                onCancel={cancelAddEvent}
+            />
             <div className="chat-interface styled-chat">
                 <div className="chat-header styled-header">
                     <h2>CalPal Assistant</h2>
-                    <p className={`status ${status.toLowerCase()}`}>{status}</p>
+                    <p className="status">{status}</p>
                 </div>
                 <div className="messages-window styled-messages">
                     {messages.map((msg, index) => (
                         <div key={index} className={`message-wrapper ${msg.author}`}>
-                            <div className={`message-bubble ${msg.author}-bubble`}>
-                                {msg.text}
-                            </div>
+                            <div className={`message-bubble ${msg.author}-bubble`}>{msg.text}</div>
                         </div>
                     ))}
                     <div ref={messagesEndRef} />
                 </div>
                 <form
-                    className="input-form styled-input-form"
-                    onSubmit={handleSendMessage}
-                    style={{ position: "relative" }}
+                    className="input-form"
+                    onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputValue); }}
                 >
                     <input
-                        ref={inputRef}
                         type="text"
                         value={inputValue}
-                        onChange={handleInputChange}
-                        onKeyDown={handleInputKeyDown}
-                        placeholder="Ask me to schedule an event..."
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Schedule an event or ask about your day..."
                         disabled={status === "Thinking..."}
-                        autoComplete="off"
                     />
-                    <button type="submit" disabled={status === "Thinking..."} className="send-btn">
-                        Send
-                    </button>
-                    {showToolPopup && (
-                         <div className="tool-popup">
-                             {filteredTools.map((tool, idx) => (
-                                 <div
-                                     key={tool}
-                                     className={`tool-option${idx === selectedToolIdx ? " selected" : ""}`}
-                                     onMouseDown={() => handleToolSelect(tool)}
-                                 >
-                                     @{tool}
-                                 </div>
-                             ))}
-                         </div>
-                     )}
+                    <button type="submit" disabled={status === "Thinking..."}>Send</button>
                 </form>
             </div>
-            <footer className="footer">
-                <div className="footer-content">
-                    <Link to="/privacy" className="footer-link">Privacy Policy</Link>
-                    <span className="footer-separator">•</span>
-                    <Link to="/terms" className="footer-link">Terms of Service</Link>
-                </div>
-            </footer>
+             {/* Your Footer Here */}
         </div>
     );
 };
