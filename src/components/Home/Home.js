@@ -54,26 +54,40 @@ const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
 };
 
 // --- Quick Actions Component ---
-const QuickActions = () => (
+const QuickActions = ({ onActionClick }) => (
     <div className="quick-actions">
-        <button className="quick-action-button">
-            <i className="fas fa-plane"></i>
-            <div className="quick-action-title">Wanderlust Destinations 2024</div>
-            <div className="quick-action-subtitle">Must-Visit Places</div>
+        <button
+            className="quick-action-button"
+            onClick={() =>
+                onActionClick("Schedule a meeting for tomorrow at 10am")
+            }
+        >
+            <i className="fas fa-calendar-plus"></i>
+            <div className="quick-action-title">Quick Schedule</div>
+            <div className="quick-action-subtitle">
+                Create meeting for tomorrow
+            </div>
         </button>
-        <button className="quick-action-button">
-             <div className="logo-icon-small"></div>
-            <div className="quick-action-title">CalPal AI: What Sets Us Apart</div>
-            <div className="quick-action-subtitle">Key Differentiators</div>
+        <button
+            className="quick-action-button"
+            onClick={() => onActionClick("What events do I have today?")}
+        >
+            <i className="fas fa-calendar-day"></i>
+            <div className="quick-action-title">Today's Schedule</div>
+            <div className="quick-action-subtitle">View today's events</div>
         </button>
-        <button className="quick-action-button">
-            <i className="fas fa-times"></i>
-            <div className="quick-action-title">Design Trends on TikTok 2024</div>
-            <div className="quick-action-subtitle">Trending Now</div>
+        <button
+            className="quick-action-button"
+            onClick={() =>
+                onActionClick("Find me a free 1-hour slot this week")
+            }
+        >
+            <i className="fas fa-clock"></i>
+            <div className="quick-action-title">Find Free Time</div>
+            <div className="quick-action-subtitle">Check availability</div>
         </button>
     </div>
 );
-
 
 // --- Main Chat Component ---
 const Home = ({ session }) => {
@@ -130,7 +144,10 @@ const Home = ({ session }) => {
             handleAgentResponse(botResponseText);
         } catch (error) {
             console.error("Error sending message:", error);
-            const errorMessage = { author: "bot", text: "Sorry, something went wrong." };
+            const errorMessage = {
+                author: "bot",
+                text: "Sorry, something went wrong.",
+            };
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
             setStatus("Idle");
@@ -198,6 +215,10 @@ const Home = ({ session }) => {
         setPendingEvent(null);
     };
 
+    const handleQuickAction = (prompt) => {
+        handleSendMessage(prompt);
+    };
+
     return (
         <div className="main-container">
             {/* <div className="top-bar">
@@ -216,8 +237,10 @@ const Home = ({ session }) => {
                 <div className="chat-interface">
                     {messages.length === 0 && (
                         <>
-                            <WelcomeHeader userName={session?.user?.email?.split("@")[0]} />
-                            <QuickActions />
+                            <WelcomeHeader
+                                userName={session?.user?.email?.split("@")[0]}
+                            />
+                            <QuickActions onActionClick={handleQuickAction} />
                         </>
                     )}
 
@@ -239,7 +262,7 @@ const Home = ({ session }) => {
                 </div>
             </div>
             <div className="input-area">
-                 <div className="input-container">
+                <div className="input-container">
                     {/* <button type="button" className="tool-button-left">
                         <i className="fas fa-th-large"></i>
                     </button> */}
@@ -263,7 +286,9 @@ const Home = ({ session }) => {
                         <button
                             type="submit"
                             className="send-button"
-                            disabled={!inputValue.trim() || status === "Thinking..."}
+                            disabled={
+                                !inputValue.trim() || status === "Thinking..."
+                            }
                         >
                             Send <i className="fas fa-arrow-right"></i>
                         </button>
