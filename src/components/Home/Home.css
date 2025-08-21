@@ -435,3 +435,122 @@ body {
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
 }
+
+/* Input tools section */
+.input-tools {
+    display: flex;
+    gap: 8px;
+    padding-right: 12px;
+}
+
+.tool-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-button:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.tool-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Animation for the upload spinner */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+.context-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #e8f0fe; /* Light blue */
+    color: #1967d2; /* Darker blue */
+    border-radius: 8px;
+    margin: 0 20px 10px 20px;
+    font-size: 0.9em;
+}
+
+.context-banner button {
+    background: none;
+    border: 1px solid #1967d2;
+    color: #1967d2;
+    border-radius: 5px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+/* File Preview Styles */
+.file-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--primary-light);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    animation: slideDown 0.2s ease-out;
+}
+
+.file-preview i {
+    color: var(--primary);
+    font-size: 16px;
+}
+
+.file-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+}
+
+.remove-file {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.remove-file:hover {
+    color: var(--primary);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

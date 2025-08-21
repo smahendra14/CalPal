@@ -35,6 +35,14 @@ function Sidebar({ supabase, session }) {
                 >
                     Settings
                 </button>
+                <button
+                    className={`btn ${
+                        location.pathname === "/file-upload" ? "active" : ""
+                    }`}
+                    onClick={() => navigate("/file-upload")}
+                >
+                    Upload Syllabus
+                </button>
             </div>
             <p>
                 You are currently signed in to the primary calendar associated

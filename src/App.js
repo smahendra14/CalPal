@@ -9,6 +9,7 @@ import {
 import LandingPage from "./components/LandingPage/LandingPage.js";
 import Home from "./components/Home/Home.js";
 import Settings from "./components/Settings/Settings.js";
+import FileUpload from "./components/FileUpload/FileUpload.js";
 import Sidebar from "./components/Sidebar/Sidebar.js";
 import PrivacyPolicy from "./components/Legal/PrivacyPolicy/PrivacyPolicy.js";
 import TermsOfService from "./components/Legal/TermsOfService/TermsOfService.js";
@@ -99,6 +100,25 @@ function App() {
                                             />
                                         </ProtectedRoute>
                                     }
+                                />
+                                <Route
+                                    path="/file-upload"
+                                    element={
+                                        <ProtectedRoute session={session}>
+                                            <FileUpload
+                                                session={session}
+                                                supabase={supabase}
+                                            />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/privacy"
+                                    element={<PrivacyPolicy />}
+                                />
+                                <Route
+                                    path="/terms"
+                                    element={<TermsOfService />}
                                 />
                                 <Route
                                     path="/privacy"
