@@ -4,7 +4,7 @@ import "./Home.css";
 // --- Welcome Message Component (Unchanged) ---
 const WelcomeHeader = ({ userName = "Asal Design" }) => (
     <div className="welcome-header">
-        <h1>Hi, {userName}</h1>
+        <h1>Welcome!</h1>
         <h2>Can I help you with anything?</h2>
         <p>
             Ready to assist you with anything you need, from scheduling
