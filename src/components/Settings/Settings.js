@@ -11,7 +11,7 @@ const Settings = ({ supabase, session }) => {
         const fetchSettings = async () => {
             try {
                 const { data, error } = await supabase
-                    .from("UserInfo")
+                    .from("user_info")
                     .select("send_daily_summary")
                     .eq("email", session.user.email)
                     .single(); // Expect a single row
@@ -46,7 +46,7 @@ const Settings = ({ supabase, session }) => {
     const setDailySummary = async (enabled) => {
         try {
             const { error } = await supabase
-                .from("UserInfo")
+                .from("user_info")
                 .update({ send_daily_summary: enabled })
                 .eq("email", session.user.email);
             if (error) throw error;
