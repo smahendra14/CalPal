@@ -137,7 +137,7 @@ export default App;
 
 
 // --- API Call using Supabase Access Token ---
-const response = await fetch("http://localhost:8000/generate", {
+const response = await fetch(`${process.env.REACT_APP_API_URL}/generate`, {
     method: "POST",
     headers: {
         "Content-Type": "application/json",

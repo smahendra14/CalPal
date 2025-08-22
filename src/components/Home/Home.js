@@ -207,7 +207,7 @@ const Home = ({ session }) => {
                 const formData = new FormData();
                 formData.append("file", selectedFile);
 
-                const uploadResponse = await fetch("http://localhost:8000/upload-pdf", {
+                const uploadResponse = await fetch(`${process.env.REACT_APP_API_URL}/upload-pdf`, {
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${supabaseAccessToken}`,
@@ -235,7 +235,7 @@ const Home = ({ session }) => {
                     )
                 );
 
-                const askResponse = await fetch("http://localhost:8000/ask-pdf", {
+                const askResponse = await fetch(`http://${process.env.REACT_APP_API_URL}/ask-pdf`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -258,7 +258,7 @@ const Home = ({ session }) => {
 
             // --- BRANCH 2: Handle regular agent conversation ---
             } else {
-                const response = await fetch("http://localhost:8000/generate", {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/generate`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -361,7 +361,7 @@ const Home = ({ session }) => {
 
         try {
             const supabaseAccessToken = session.access_token;
-            const response = await fetch("http://localhost:8000/create-event", {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/create-event`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
