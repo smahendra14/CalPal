@@ -235,7 +235,7 @@ const Home = ({ session }) => {
                     )
                 );
 
-                const askResponse = await fetch(`http://${process.env.REACT_APP_API_URL}/ask-pdf`, {
+                const askResponse = await fetch(`${process.env.REACT_APP_API_URL}/ask-pdf`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
