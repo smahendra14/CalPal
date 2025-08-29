@@ -1,5 +1,5 @@
 /**
- * Stores the refresh token of the signed-in user in the database
+ * Stores the encrypted refresh token of the signed-in user in the database
  * by invoking a Supabase database function via RPC (Remote Procedure Call).
  * This provides a secure way to persist sensitive information.
  *
@@ -8,15 +8,26 @@
  * @param {string} refreshToken - The refresh token associated with the user's session
  */
 const storeRefreshTokenInDatabase = async (supabase, email, refreshToken) => {
-    const { error } = await supabase.rpc("store_refresh_token", {
-        user_email: email,
-        refresh_token: refreshToken,
-    });
+    try {
+        // Encrypt the refresh token before storing
+        const encryptedToken = encryptToken(refreshToken);
 
-    if (error) {
+        const { error } = await supabase.rpc("store_refresh_token", {
+            user_email: email,
+            refresh_token: encryptedToken,
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        // Only log in development mode
+        if (process.env.NODE_ENV === "development") {
+            console.log("Encrypted refresh token stored successfully!");
+        }
+    } catch (error) {
         console.error("Error storing refresh token:", error.message);
-    } else {
-        console.log("Refresh token stored successfully!");
+        throw new Error("Failed to store refresh token securely");
     }
 };
 
