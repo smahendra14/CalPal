@@ -13,9 +13,10 @@ import FileUpload from "./components/FileUpload/FileUpload.js";
 import Sidebar from "./components/Sidebar/Sidebar.js";
 import PrivacyPolicy from "./components/Legal/PrivacyPolicy/PrivacyPolicy.js";
 import TermsOfService from "./components/Legal/TermsOfService/TermsOfService.js";
+import { encryptToken } from "./utils/encryption.js";
 
 /**
- * Stores the refresh token of the signed-in user in the database
+ * Stores the encrypted refresh token of the signed-in user in the database
  * by invoking a Supabase database function via RPC (Remote Procedure Call).
  * This provides a secure way to persist sensitive information.
  *
@@ -24,15 +25,26 @@ import TermsOfService from "./components/Legal/TermsOfService/TermsOfService.js"
  * @param {string} refreshToken - The refresh token associated with the user's session
  */
 const storeRefreshTokenInDatabase = async (supabase, email, refreshToken) => {
-    const { error } = await supabase.rpc("store_refresh_token", {
-        user_email: email,
-        refresh_token: refreshToken,
-    });
+    try {
+        // Encrypt the refresh token before storing
+        const encryptedToken = encryptToken(refreshToken);
 
-    if (error) {
+        const { error } = await supabase.rpc("store_refresh_token", {
+            user_email: email,
+            refresh_token: encryptedToken,
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        // Only log in development mode
+        if (process.env.NODE_ENV === "development") {
+            console.log("Encrypted refresh token stored successfully!");
+        }
+    } catch (error) {
         console.error("Error storing refresh token:", error.message);
-    } else {
-        console.log("Refresh token stored successfully!");
+        throw new Error("Failed to store refresh token securely");
     }
 };
 
@@ -52,14 +64,29 @@ function App() {
 
     // UseEffect to track session changes
     useEffect(() => {
-        if (session) {
-            // Check for and store the refresh token if available
-            const refreshToken = session.provider_refresh_token;
-            const email = session.user.email;
-            if (refreshToken) {
-                storeRefreshTokenInDatabase(supabase, email, refreshToken);
+        const handleTokenStorage = async () => {
+            if (session) {
+                // Check for and store the refresh token if available
+                const refreshToken = session.provider_refresh_token;
+                const email = session.user.email;
+                if (refreshToken) {
+                    try {
+                        await storeRefreshTokenInDatabase(
+                            supabase,
+                            email,
+                            refreshToken
+                        );
+                    } catch (error) {
+                        // Log error but don't break the user experience
+                        console.error(
+                            "Token storage failed, continuing without persistent tokens"
+                        );
+                    }
+                }
             }
-        }
+        };
+
+        handleTokenStorage();
     }, [session]); // Re-run effect when session changes
 
     if (isLoading) {
