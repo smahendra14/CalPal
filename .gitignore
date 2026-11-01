@@ -7,10 +7,10 @@ node_modules/
 .pnp.js
 
 # testing
-/coverage
+coverage/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -23,3 +23,6 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# backend is its own git repo (smahendra14/CalPal_Chat_BE)
+backend/
