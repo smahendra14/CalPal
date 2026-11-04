@@ -96,6 +96,7 @@ function FileUpload({ supabase, session }) {
         formData.append("courseName", courseName);
         formData.append("semester", semester);
         formData.append("year", year);
+        formData.append("timeZone", Intl.DateTimeFormat().resolvedOptions().timeZone);
 
         try {
             const response = await fetch(

@@ -264,7 +264,11 @@ const Home = ({ session }) => {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${supabaseAccessToken}`,
                     },
-                    body: JSON.stringify({ prompt, thread_id: threadId }),
+                    body: JSON.stringify({
+                        prompt,
+                        thread_id: threadId,
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    }),
                 });
 
                 if (!response.ok) throw new Error("Server error");
