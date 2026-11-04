@@ -83,6 +83,16 @@ function App() {
                         );
                     }
                 }
+
+                // The daily summary email runs on a UTC server, so it needs
+                // to know which day is "today" for this user
+                const { error } = await supabase
+                    .from("user_info")
+                    .update({
+                        time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    })
+                    .eq("email", email);
+                if (error) console.error("Error storing time zone:", error.message);
             }
         };
 
