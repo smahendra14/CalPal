@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Home.css";
+import { readError } from "../../utils/api.js";
 
 // --- Welcome Message Component (Unchanged) ---
 const WelcomeHeader = ({ userName = "Asal Design" }) => (
@@ -216,8 +217,7 @@ const Home = ({ session }) => {
                 });
 
                 if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json();
-                    throw new Error(errorData.error || "File upload failed.");
+                    throw new Error(await readError(uploadResponse, "File upload failed."));
                 }
 
                 const uploadResult = await uploadResponse.json();
@@ -245,8 +245,7 @@ const Home = ({ session }) => {
                 });
 
                 if (!askResponse.ok) {
-                    const errorData = await askResponse.json();
-                    throw new Error(errorData.error || "Failed to get an answer.");
+                    throw new Error(await readError(askResponse, "Failed to get an answer."));
                 }
                 
                 const askResult = await askResponse.json();
@@ -271,7 +270,7 @@ const Home = ({ session }) => {
                     }),
                 });
 
-                if (!response.ok) throw new Error("Server error");
+                if (!response.ok) throw new Error(await readError(response, "Server error"));
 
                 const botResponseText = await response.text();
                 handleAgentResponse(botResponseText); // Use existing handler for JSON/text responses
@@ -374,10 +373,11 @@ const Home = ({ session }) => {
                 body: JSON.stringify(pendingEvent),
             });
 
-            const result = await response.json();
             if (!response.ok) {
-                throw new Error(result.error || "Failed to create event.");
+                throw new Error(await readError(response, "Failed to create event."));
             }
+
+            const result = await response.json();
 
             const botMessage = { author: "bot", text: result.message };
             setMessages((prev) => [...prev, botMessage]);

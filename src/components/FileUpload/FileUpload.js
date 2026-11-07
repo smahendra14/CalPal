@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./FileUpload.css";
+import { readError } from "../../utils/api.js";
 
 // --- Helper Component for Event Display ---
 const EventCard = ({ event, onAddToCalendar, isAdding }) => {
@@ -109,10 +110,10 @@ function FileUpload({ supabase, session }) {
                     body: formData,
                 }
             );
-            const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.error || "Failed to extract events.");
+                throw new Error(await readError(response, "Failed to extract events."));
             }
+            const data = await response.json();
             if (data.events && data.events.length > 0) {
                 setEvents(data.events);
             } else {
@@ -139,9 +140,8 @@ function FileUpload({ supabase, session }) {
             });
 
             if (!response.ok) {
-                const error = await response.json();
                 throw new Error(
-                    error.error || "Failed to add event to calendar"
+                    await readError(response, "Failed to add event to calendar")
                 );
             }
 
