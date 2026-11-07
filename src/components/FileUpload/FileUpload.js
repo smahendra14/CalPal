@@ -1,5 +1,4 @@
 import React, { useState, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import "./FileUpload.css";
 import { readError } from "../../utils/api.js";
 

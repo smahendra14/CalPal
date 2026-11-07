@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import {
-    useSession,
     useSupabaseClient,
     useSessionContext,
 } from "@supabase/auth-helpers-react";
@@ -97,7 +96,7 @@ function App() {
         };
 
         handleTokenStorage();
-    }, [session]); // Re-run effect when session changes
+    }, [session, supabase]); // Re-run effect when session changes
 
     if (isLoading) {
         return <></>; // used to get around flickering that occurs when you reload the page when signed in

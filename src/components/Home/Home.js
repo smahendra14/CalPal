@@ -157,13 +157,11 @@ const Home = ({ session }) => {
     const fileInputRef = useRef(null);
 
     // --- UPDATED State for all modals ---
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingEvent, setPendingEvent] = useState(null);
     const [showEventsModal, setShowEventsModal] = useState(false);
     const [todayEvents, setTodayEvents] = useState([]);
 
     // --- NEW: State for PDF Q&A context ---
-    const [activeDocumentId, setActiveDocumentId] = useState(null);
     // const [activePdfName, setActivePdfName] = useState("");
     // const [uploadedFile, setUploadedFile] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -333,7 +331,6 @@ const Home = ({ session }) => {
             switch (parsedResponse.action) {
                 case "CONFIRM_CREATE_EVENT":
                     setPendingEvent(parsedResponse.payload);
-                    setShowConfirmModal(true);
                     break;
 
                 case "DISPLAY_TODAY_EVENTS":
@@ -359,7 +356,6 @@ const Home = ({ session }) => {
     const confirmAddEvent = async () => {
         if (!pendingEvent || !session) return;
 
-        setShowConfirmModal(false);
         setStatus("Thinking...");
 
         try {
@@ -392,7 +388,6 @@ const Home = ({ session }) => {
     };
 
     const cancelAddEvent = () => {
-        setShowConfirmModal(false);
         setPendingEvent(null);
         setMessages((prev) => [
             ...prev,
@@ -443,7 +438,6 @@ const Home = ({ session }) => {
 
     const handleRemoveFile = () => {
         setSelectedFile(null);
-        setActiveDocumentId(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = ""; // Reset file input
         }
