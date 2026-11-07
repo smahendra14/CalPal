@@ -12,29 +12,30 @@ import FileUpload from "./components/FileUpload/FileUpload.js";
 import Sidebar from "./components/Sidebar/Sidebar.js";
 import PrivacyPolicy from "./components/Legal/PrivacyPolicy/PrivacyPolicy.js";
 import TermsOfService from "./components/Legal/TermsOfService/TermsOfService.js";
-import { encryptToken } from "./utils/encryption.js";
 
 /**
- * Stores the encrypted refresh token of the signed-in user in the database
- * by invoking a Supabase database function via RPC (Remote Procedure Call).
- * This provides a secure way to persist sensitive information.
+ * Sends the signed-in user's Google refresh token to the backend, which
+ * encrypts it and stores it in the database.
  *
- * @param {SupabaseClient} supabase - The Supabase client instance for interacting with the database.
- * @param {string} email - The email address of the signed-in user
+ * @param {string} accessToken - The user's Supabase access token
  * @param {string} refreshToken - The refresh token associated with the user's session
  */
-const storeRefreshTokenInDatabase = async (supabase, email, refreshToken) => {
+const storeRefreshTokenInDatabase = async (accessToken, refreshToken) => {
     try {
-        // Encrypt the refresh token before storing
-        const encryptedToken = encryptToken(refreshToken);
+        const res = await fetch(
+            `${process.env.REACT_APP_API_URL}/api/auth/refresh-token`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({ refreshToken }),
+            }
+        );
 
-        const { error } = await supabase.rpc("store_refresh_token", {
-            user_email: email,
-            refresh_token: encryptedToken,
-        });
-
-        if (error) {
-            throw error;
+        if (!res.ok) {
+            throw new Error(`Server responded with ${res.status}`);
         }
 
         // Only log in development mode
@@ -71,8 +72,7 @@ function App() {
                 if (refreshToken) {
                     try {
                         await storeRefreshTokenInDatabase(
-                            supabase,
-                            email,
+                            session.access_token,
                             refreshToken
                         );
                     } catch (error) {
