@@ -156,10 +156,10 @@ const QuickActions = ({ onActionClick }) => (
 );
 
 // --- NEW: File Preview Component ---
-const FilePreview = ({ file, onRemove }) => (
+const FilePreview = ({ name, onRemove }) => (
     <div className="file-preview">
         <i className="fas fa-file-pdf"></i>
-        <span className="file-name">{file.name}</span>
+        <span className="file-name">{name}</span>
         <button className="remove-file" onClick={onRemove}>
             <i className="fas fa-times"></i>
         </button>
@@ -182,10 +182,9 @@ const Home = ({ session }) => {
     const [todayEvents, setTodayEvents] = useState([]);
     const [showRecap, setShowRecap] = useState(false);
 
-    // --- NEW: State for PDF Q&A context ---
-    // const [activePdfName, setActivePdfName] = useState("");
-    // const [uploadedFile, setUploadedFile] = useState(null);
+    // selectedFile is picked but not uploaded yet; attachedDocument is uploaded and used by the chat
     const [selectedFile, setSelectedFile] = useState(null);
+    const [attachedDocument, setAttachedDocument] = useState(null);
 
     useEffect(() => {
         setThreadId(`thread_${crypto.randomUUID()}`);
@@ -214,7 +213,8 @@ const Home = ({ session }) => {
         try {
             const supabaseAccessToken = session.access_token;
 
-            // --- BRANCH 1: Handle PDF upload and Q&A ---
+            // A newly picked PDF is uploaded first, then stays attached to the chat
+            let documentId = attachedDocument?.id;
             if (selectedFile) {
                 setUploading(true);
                 const tempBotMessage = {
@@ -223,10 +223,8 @@ const Home = ({ session }) => {
                 };
                 setMessages((prev) => [...prev, tempBotMessage]);
 
-                // Step 1: Upload the PDF file to the /upload-pdf endpoint
                 const formData = new FormData();
                 formData.append("file", selectedFile);
-
                 const uploadResponse = await fetch(`${process.env.REACT_APP_API_URL}/upload-pdf`, {
                     method: "POST",
                     headers: {
@@ -234,66 +232,34 @@ const Home = ({ session }) => {
                     },
                     body: formData,
                 });
-
                 if (!uploadResponse.ok) {
                     throw new Error(await readError(uploadResponse, "File upload failed."));
                 }
 
-                const uploadResult = await uploadResponse.json();
-                const documentId = uploadResult.documentId;
-                
-                // File is uploaded, remove it from the input area
-                handleRemoveFile();
-
-                // Step 2: Ask a question using the returned documentId
-                setMessages((prev) =>
-                    prev.map((msg) =>
-                        msg === tempBotMessage
-                            ? { ...msg, text: "Analyzing document..." }
-                            : msg
-                    )
-                );
-
-                const askResponse = await fetch(`${process.env.REACT_APP_API_URL}/ask-pdf`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${supabaseAccessToken}`,
-                    },
-                    body: JSON.stringify({ documentId, question: prompt }),
-                });
-
-                if (!askResponse.ok) {
-                    throw new Error(await readError(askResponse, "Failed to get an answer."));
-                }
-                
-                const askResult = await askResponse.json();
-
-                // Step 3: Display the final answer from the PDF
-                setMessages((prev) => prev.filter((msg) => msg !== tempBotMessage)); // Remove temp message
-                const finalBotMessage = { author: "bot", text: askResult.answer };
-                setMessages((prev) => [...prev, finalBotMessage]);
-
-            // --- BRANCH 2: Handle regular agent conversation ---
-            } else {
-                const response = await fetch(`${process.env.REACT_APP_API_URL}/generate`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${supabaseAccessToken}`,
-                    },
-                    body: JSON.stringify({
-                        prompt,
-                        thread_id: threadId,
-                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    }),
-                });
-
-                if (!response.ok) throw new Error(await readError(response, "Server error"));
-
-                handleAgentReply(await response.json());
+                documentId = (await uploadResponse.json()).documentId;
+                setAttachedDocument({ id: documentId, name: selectedFile.name });
+                clearSelectedFile();
+                setMessages((prev) => prev.filter((msg) => msg !== tempBotMessage));
             }
 
+            // The agent searches the attached PDF itself, so follow-up questions keep their context
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/generate`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${supabaseAccessToken}`,
+                },
+                body: JSON.stringify({
+                    prompt,
+                    thread_id: threadId,
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    documentId,
+                }),
+            });
+
+            if (!response.ok) throw new Error(await readError(response, "Server error"));
+
+            handleAgentReply(await response.json());
         } catch (error) {
             console.error("Error sending message:", error);
             const errorMessage = {
@@ -306,7 +272,7 @@ const Home = ({ session }) => {
         } finally {
             setStatus("Idle");
             setUploading(false);
-            if (selectedFile) handleRemoveFile(); // Clean up file input on error too
+            if (selectedFile) clearSelectedFile(); // Clean up file input on error too
         }
     };
 
@@ -406,11 +372,16 @@ const Home = ({ session }) => {
         ]);
     };
 
-    const handleRemoveFile = () => {
+    const clearSelectedFile = () => {
         setSelectedFile(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = ""; // Reset file input
         }
+    };
+
+    const handleRemoveFile = () => {
+        clearSelectedFile();
+        setAttachedDocument(null);
     };
 
     return (
@@ -487,9 +458,9 @@ const Home = ({ session }) => {
                             }
                         }}
                     />
-                    {selectedFile && (
+                    {(selectedFile || attachedDocument) && (
                         <FilePreview
-                            file={selectedFile}
+                            name={(selectedFile || attachedDocument).name}
                             onRemove={handleRemoveFile}
                         />
                     )}
@@ -514,7 +485,7 @@ const Home = ({ session }) => {
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder={
-                                selectedFile
+                                selectedFile || attachedDocument
                                     ? "Ask a question about your PDF..."
                                     : "Ask CalPal anything..."
                             }
