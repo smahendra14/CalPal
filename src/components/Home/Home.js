@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Home.css";
 import { readError } from "../../utils/api.js";
+import RecapModal from "./RecapModal.js";
 
 // --- Welcome Message Component (Unchanged) ---
 const WelcomeHeader = ({ userName = "Asal Design" }) => (
@@ -143,6 +144,14 @@ const QuickActions = ({ onActionClick }) => (
             <div className="quick-action-title">Find Free Time</div>
             <div className="quick-action-subtitle">Check availability</div>
         </button>
+        <button
+            className="quick-action-button"
+            onClick={() => onActionClick("Give me a recap of my calendar")}
+        >
+            <i className="fas fa-chart-bar"></i>
+            <div className="quick-action-title">Calendar Recap</div>
+            <div className="quick-action-subtitle">Where your time went</div>
+        </button>
     </div>
 );
 
@@ -171,6 +180,7 @@ const Home = ({ session }) => {
     const [pendingEvent, setPendingEvent] = useState(null);
     const [showEventsModal, setShowEventsModal] = useState(false);
     const [todayEvents, setTodayEvents] = useState([]);
+    const [showRecap, setShowRecap] = useState(false);
 
     // --- NEW: State for PDF Q&A context ---
     // const [activePdfName, setActivePdfName] = useState("");
@@ -308,6 +318,8 @@ const Home = ({ session }) => {
         } else if (reply.type === "events") {
             setTodayEvents(reply.events);
             setShowEventsModal(true);
+        } else if (reply.type === "recap") {
+            setShowRecap(true);
         }
     };
 
@@ -416,6 +428,9 @@ const Home = ({ session }) => {
                     onClose={() => setShowEventsModal(false)}
                     events={todayEvents}
                 />
+                {showRecap && (
+                    <RecapModal session={session} onClose={() => setShowRecap(false)} />
+                )}
 
                 <div className="chat-interface">
                     {messages.length === 0 && (

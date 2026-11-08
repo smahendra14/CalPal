@@ -1,0 +1,56 @@
+.recap-modal {
+    max-width: 640px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.recap-modal h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+
+.recap-message {
+    text-align: center;
+    padding: 24px 0;
+}
+
+.recap-categories {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recap-categories li {
+    display: grid;
+    grid-template-columns: 80px 1fr 90px;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.recap-category-name {
+    text-transform: capitalize;
+}
+
+.recap-category-track {
+    height: 10px;
+    background-color: rgba(255, 153, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.recap-category-fill {
+    height: 100%;
+    background-color: var(--primary-orange);
+}
+
+.recap-category-hours {
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
