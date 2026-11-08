@@ -16,7 +16,7 @@ const WelcomeHeader = ({ userName = "Asal Design" }) => (
 );
 
 // --- Confirmation Modal Component (Unchanged) ---
-const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
+const ConfirmationModal = ({ event, onConfirm, onCancel, isAdding }) => {
     if (!event) return null;
     return (
         <div className="modal-overlay">
@@ -37,14 +37,25 @@ const ConfirmationModal = ({ event, onConfirm, onCancel }) => {
                     </p>
                 </div>
                 <div className="modal-actions">
-                    <button onClick={onCancel} className="modal-button cancel">
+                    <button
+                        onClick={onCancel}
+                        className="modal-button cancel"
+                        disabled={isAdding}
+                    >
                         Cancel
                     </button>
                     <button
                         onClick={onConfirm}
                         className="modal-button confirm"
+                        disabled={isAdding}
                     >
-                        Confirm & Add
+                        {isAdding ? (
+                            <>
+                                <i className="fas fa-spinner fa-spin"></i> Adding...
+                            </>
+                        ) : (
+                            "Confirm & Add"
+                        )}
                     </button>
                 </div>
             </div>
@@ -281,7 +292,7 @@ const Home = ({ session }) => {
                 text: error.message || "Sorry, something went wrong.",
             };
              // Clear any temporary messages on error
-            setMessages(prev => prev.filter(m => !m.text.includes('Processing...')));
+            setMessages(prev => prev.filter(m => !m.text.startsWith('Processing "')));
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
             setStatus("Idle");
@@ -451,6 +462,7 @@ const Home = ({ session }) => {
                     event={pendingEvent}
                     onConfirm={confirmAddEvent}
                     onCancel={cancelAddEvent}
+                    isAdding={status === "Thinking..."}
                 />
                 <ViewEventsModal
                     isOpen={showEventsModal}
@@ -481,6 +493,13 @@ const Home = ({ session }) => {
                                 </div>
                             </div>
                         ))}
+                        {status === "Thinking..." && !uploading && !pendingEvent && (
+                            <div className="message-wrapper bot">
+                                <div className="message-bubble bot-bubble">
+                                    <i className="fas fa-spinner fa-spin"></i> Thinking...
+                                </div>
+                            </div>
+                        )}
                         <div ref={messagesEndRef} />
                     </div>
                 </div>

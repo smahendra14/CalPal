@@ -396,7 +396,12 @@ body {
     color: white;
 }
 
-.modal-button.confirm:hover {
+.modal-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modal-button.confirm:hover:not(:disabled) {
     background: #e66a4d;
     transform: translateY(-1px);
 }

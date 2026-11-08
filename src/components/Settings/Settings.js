@@ -5,6 +5,7 @@ const Settings = ({ supabase, session }) => {
     const [isEnabled, setIsEnabled] = useState(true); // Default to true while loading
     const [summaryTime, setSummaryTime] = useState("9:00am"); // State for time selection
     const [loading, setLoading] = useState(true); // To manage loading state
+    const [saving, setSaving] = useState(false);
 
     // Fetch the initial isEnabled value from the database
     useEffect(() => {
@@ -36,23 +37,22 @@ const Settings = ({ supabase, session }) => {
         setIsEnabled((prev) => !prev);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        setSaving(true);
+        const { error } = await supabase
+            .from("user_info")
+            .update({ send_daily_summary: isEnabled })
+            .eq("email", session.user.email);
+        setSaving(false);
+
+        if (error) {
+            console.error("Error updating send_daily_summary", error.message);
+            alert("Couldn't save your settings. Please try again.");
+            return;
+        }
         alert(`Settings Saved:
     Receive Summaries: ${isEnabled ? "Yes" : "No"}
     Send Summary At: ${summaryTime}`);
-        setDailySummary(isEnabled);
-    };
-
-    const setDailySummary = async (enabled) => {
-        try {
-            const { error } = await supabase
-                .from("user_info")
-                .update({ send_daily_summary: enabled })
-                .eq("email", session.user.email);
-            if (error) throw error;
-        } catch (error) {
-            console.error("Error updating send_daily_summary", error.message);
-        }
     };
 
     if (loading) {
@@ -155,8 +155,8 @@ const Settings = ({ supabase, session }) => {
                 </div>
             </div>
 
-            <button className="save-button" onClick={handleSave}>
-                Save
+            <button className="save-button" onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save"}
             </button>
         </div>
     );
