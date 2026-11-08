@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Home.css";
 import { readError } from "../../utils/api.js";
-import WrappedModal from "./WrappedModal.js";
+import RecapModal from "./RecapModal.js";
 
 // --- Welcome Message Component (Unchanged) ---
 const WelcomeHeader = ({ userName = "Asal Design" }) => (
@@ -146,10 +146,10 @@ const QuickActions = ({ onActionClick }) => (
         </button>
         <button
             className="quick-action-button"
-            onClick={() => onActionClick("How's my semester looking?")}
+            onClick={() => onActionClick("Give me a recap of my calendar")}
         >
             <i className="fas fa-chart-bar"></i>
-            <div className="quick-action-title">Semester Wrapped</div>
+            <div className="quick-action-title">Calendar Recap</div>
             <div className="quick-action-subtitle">Your busiest weeks</div>
         </button>
     </div>
@@ -180,7 +180,7 @@ const Home = ({ session }) => {
     const [pendingEvent, setPendingEvent] = useState(null);
     const [showEventsModal, setShowEventsModal] = useState(false);
     const [todayEvents, setTodayEvents] = useState([]);
-    const [showWrapped, setShowWrapped] = useState(false);
+    const [showRecap, setShowRecap] = useState(false);
 
     // --- NEW: State for PDF Q&A context ---
     // const [activePdfName, setActivePdfName] = useState("");
@@ -318,8 +318,8 @@ const Home = ({ session }) => {
         } else if (reply.type === "events") {
             setTodayEvents(reply.events);
             setShowEventsModal(true);
-        } else if (reply.type === "wrapped") {
-            setShowWrapped(true);
+        } else if (reply.type === "recap") {
+            setShowRecap(true);
         }
     };
 
@@ -428,8 +428,8 @@ const Home = ({ session }) => {
                     onClose={() => setShowEventsModal(false)}
                     events={todayEvents}
                 />
-                {showWrapped && (
-                    <WrappedModal session={session} onClose={() => setShowWrapped(false)} />
+                {showRecap && (
+                    <RecapModal session={session} onClose={() => setShowRecap(false)} />
                 )}
 
                 <div className="chat-interface">

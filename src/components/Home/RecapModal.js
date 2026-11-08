@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import "./WrappedModal.css";
+import "./RecapModal.css";
 import { readError } from "../../utils/api.js";
 
 // "2026-11-02" -> "Nov 2"
@@ -10,7 +10,7 @@ const formatWeek = (weekStart) =>
         timeZone: "UTC",
     });
 
-const WrappedModal = ({ session, onClose }) => {
+const RecapModal = ({ session, onClose }) => {
     const [insights, setInsights] = useState(null);
     const [error, setError] = useState(null);
     const [attempt, setAttempt] = useState(0);
@@ -32,7 +32,7 @@ const WrappedModal = ({ session, onClose }) => {
                     signal,
                 });
                 if (!response.ok) {
-                    throw new Error(await readError(response, "Couldn't load your semester."));
+                    throw new Error(await readError(response, "Couldn't load your calendar recap."));
                 }
                 setInsights((await response.json()).insights);
             } catch (err) {
@@ -51,7 +51,7 @@ const WrappedModal = ({ session, onClose }) => {
     const renderBody = () => {
         if (error) {
             return (
-                <div className="wrapped-message">
+                <div className="recap-message">
                     <p>{error}</p>
                     <button className="modal-button confirm" onClick={() => setAttempt((n) => n + 1)}>
                         Retry
@@ -61,7 +61,7 @@ const WrappedModal = ({ session, onClose }) => {
         }
         if (!insights) {
             return (
-                <div className="wrapped-message">
+                <div className="recap-message">
                     <i className="fas fa-spinner fa-spin"></i>
                     <p>Looking through your calendar...</p>
                 </div>
@@ -69,8 +69,8 @@ const WrappedModal = ({ session, onClose }) => {
         }
         if (insights.weeks.length === 0) {
             return (
-                <div className="wrapped-message">
-                    <p>No events on your calendar this semester yet.</p>
+                <div className="recap-message">
+                    <p>No events on your calendar in the last few months.</p>
                 </div>
             );
         }
@@ -80,12 +80,12 @@ const WrappedModal = ({ session, onClose }) => {
         return (
             <>
                 <section>
-                    <h3>Your semester, week by week</h3>
-                    <div className="wrapped-timeline">
+                    <h3>Hours scheduled each week</h3>
+                    <div className="recap-timeline">
                         {insights.weeks.map((week) => (
                             <div
                                 key={week.weekStart}
-                                className={`wrapped-bar ${week.isPast ? "past" : ""} ${week.isCurrent ? "current" : ""}`}
+                                className={`recap-bar ${week.isPast ? "past" : ""} ${week.isCurrent ? "current" : ""}`}
                                 style={{ height: `${(week.scheduledHours / maxHours) * 100}%` }}
                                 title={`Week of ${formatWeek(week.weekStart)}: ${week.scheduledHours} hours`}
                                 aria-label={`Week of ${formatWeek(week.weekStart)}: ${week.scheduledHours} hours`}
@@ -93,7 +93,7 @@ const WrappedModal = ({ session, onClose }) => {
                             ></div>
                         ))}
                     </div>
-                    <div className="wrapped-timeline-labels">
+                    <div className="recap-timeline-labels">
                         <span>{formatWeek(insights.weeks[0].weekStart)}</span>
                         <span>{formatWeek(insights.weeks.at(-1).weekStart)}</span>
                     </div>
@@ -102,7 +102,7 @@ const WrappedModal = ({ session, onClose }) => {
                 {insights.busiestPastWeeks.length > 0 && (
                     <section>
                         <h3>Busiest weeks so far</h3>
-                        <ol className="wrapped-cards">
+                        <ol className="recap-cards">
                             {insights.busiestPastWeeks.map((weekStart) => (
                                 <li key={weekStart}>
                                     <span>Week of {formatWeek(weekStart)}</span>
@@ -114,7 +114,7 @@ const WrappedModal = ({ session, onClose }) => {
                 )}
 
                 {insights.heaviestWeekday && (
-                    <p className="wrapped-fact">
+                    <p className="recap-fact">
                         Your busiest day of the week is <strong>{insights.heaviestWeekday}</strong>.
                     </p>
                 )}
@@ -125,12 +125,12 @@ const WrappedModal = ({ session, onClose }) => {
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div
-                className="modal-content wrapped-modal"
+                className="modal-content recap-modal"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
-                aria-label="Semester Wrapped"
+                aria-label="Calendar Recap"
             >
-                <h2>Semester Wrapped</h2>
+                <h2>Calendar Recap</h2>
                 {renderBody()}
                 <div className="modal-actions">
                     <button className="modal-button cancel" onClick={onClose}>
@@ -142,4 +142,4 @@ const WrappedModal = ({ session, onClose }) => {
     );
 };
 
-export default WrappedModal;
+export default RecapModal;

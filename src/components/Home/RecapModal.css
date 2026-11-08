@@ -1,36 +1,36 @@
-.wrapped-modal {
+.recap-modal {
     max-width: 640px;
     max-height: 85vh;
     overflow-y: auto;
     box-sizing: border-box;
 }
 
-.wrapped-modal section {
+.recap-modal section {
     margin-bottom: 24px;
 }
 
-.wrapped-modal h3 {
+.recap-modal h3 {
     font-size: 16px;
     font-weight: 600;
     margin: 0 0 12px;
 }
 
-.wrapped-message {
+.recap-message {
     text-align: center;
     padding: 24px 0;
 }
 
-.wrapped-message i {
+.recap-message i {
     font-size: 28px;
     color: var(--primary-orange);
 }
 
-.wrapped-message .modal-button {
+.recap-message .modal-button {
     margin: 0 auto;
 }
 
 /* Weekly bars */
-.wrapped-timeline {
+.recap-timeline {
     display: flex;
     align-items: flex-end;
     gap: 3px;
@@ -39,24 +39,24 @@
     border-bottom: 1px solid var(--border-color);
 }
 
-.wrapped-bar {
+.recap-bar {
     flex: 1;
     min-height: 2px;
     background-color: var(--primary-orange);
     border-radius: 3px 3px 0 0;
 }
 
-.wrapped-bar.past {
+.recap-bar.past {
     opacity: 0.45;
 }
 
-.wrapped-bar.current {
+.recap-bar.current {
     opacity: 1;
     outline: 2px solid var(--text-primary);
     outline-offset: 1px;
 }
 
-.wrapped-timeline-labels {
+.recap-timeline-labels {
     display: flex;
     justify-content: space-between;
     font-size: 12px;
@@ -65,7 +65,7 @@
 }
 
 /* Busiest weeks */
-.wrapped-cards {
+.recap-cards {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -73,18 +73,18 @@
     border-radius: 12px;
 }
 
-.wrapped-cards li {
+.recap-cards li {
     display: flex;
     justify-content: space-between;
     padding: 12px 16px;
     font-size: 14px;
 }
 
-.wrapped-cards li + li {
+.recap-cards li + li {
     border-top: 1px solid var(--border-color);
 }
 
-.wrapped-modal .wrapped-fact {
+.recap-modal .recap-fact {
     text-align: left;
     color: var(--text-primary);
 }

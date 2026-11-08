@@ -1,11 +1,11 @@
-# Semester Wrapped Implementation Plan
+# Calendar Recap Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** From chat ("how's my semester looking?"), open a modal that scans the user's primary Google Calendar with live progress, then shows where their time went, their busiest past weeks, the upcoming crunch weeks (deadlines, grade at stake, free hours), and a short AI summary that only uses computed numbers.
 
 **Architecture:**
-- **Chat:** a chat tool, `openWrapped`, tells the frontend to open `WrappedModal`. The modal calls `POST /api/insights`, which does the work.
+- **Chat:** a chat tool, `openRecap`, tells the frontend to open `RecapModal`. The modal calls `POST /api/insights`, which does the work.
 - **Metrics:** computed by one pure function, `computeInsights`. It grows a little each milestone, but its signature never changes.
 - **Scanning:** starts as one sequential fetch (Milestone 1) and becomes parallel monthly windows through a worker pool with retry and streamed progress (Milestone 2).
 - **Categories** (Milestone 3), **syllabus deadlines** (Milestone 4) and the **AI summary** (Milestone 5) are each added as their own slice.
@@ -57,14 +57,14 @@ Fields from later milestones are simply missing until their milestone. `schedule
 
 ## Milestone 1: Walking skeleton (chat → modal → weekly hours)
 
-**You can try:** ask "how's my semester looking?" or tap **Semester Wrapped**. A modal shows a bar per week of scheduled hours (past weeks dimmed, current week outlined), your 3 busiest weeks so far, and your heaviest weekday. It loads in one go, with a spinner and no live progress yet.
+**You can try:** ask "how's my semester looking?" or tap **Calendar Recap**. A modal shows a bar per week of scheduled hours (past weeks dimmed, current week outlined), your 3 busiest weeks so far, and your heaviest weekday. It loads in one go, with a spinner and no live progress yet.
 
 **Files:**
 - Modify: `backend/controllers/calendarController.js`. Extract the repeated token lookup into `getGoogleCalendar(userEmail) -> calendar` (it throws the same 403 `AppError`), and use it in the existing handlers.
 - Create: `backend/utils/insights.js`, `backend/test/insights.test.js`
 - Create: `backend/controllers/insightsController.js`, `backend/routes/insights.js`. Modify: `backend/routes/index.js` (mount `/insights`)
-- Modify: `backend/src/agent.js` (the `openWrapped` tool and a system prompt line), `backend/utils/chatReply.js` (the type list in the comment)
-- Create: `src/components/Home/WrappedModal.js`, `src/components/Home/WrappedModal.css`. Modify: `src/components/Home/Home.js`
+- Modify: `backend/src/agent.js` (the `openRecap` tool and a system prompt line), `backend/utils/chatReply.js` (the type list in the comment)
+- Create: `src/components/Home/RecapModal.js`, `src/components/Home/RecapModal.css`. Modify: `src/components/Home/Home.js`
 
 - [ ] **Step 1: Set up.** Create branch `feat/semester-wrapped` in both repos. Check the frontend `.env` for `REACT_APP_API_URL`.
 - [ ] **Step 2: Write the failing tests** in `test/insights.test.js` (`today = "2026-11-04"`, `timeZone = "America/Los_Angeles"`; events have `dateTime` with a `-08:00` offset):
@@ -79,14 +79,14 @@ Fields from later milestones are simply missing until their milestone. `schedule
 - [ ] **Step 4: Implement the M1 fields of `computeInsights`.** Read the local date as `dateTime.slice(0, 10)`, and do week math on `YYYY-MM-DD` strings with `Date.UTC`.
 - [ ] **Step 5: Run** `npm test`. Expected: all pass.
 - [ ] **Step 6: Add the endpoint.** `POST /api/insights` (auth + `aiRateLimit`), with body `{ timeZone }` validated by `isValidTimeZone` (400 otherwise). It works out `today` and the ±120 day range in the user's time zone, then calls `events.list({ calendarId: "primary", timeMin, timeMax, timeZone, singleEvents: true, maxResults: 2500 })`, following `nextPageToken` one page at a time. It drops `cancelled` events and returns `res.json({ insights: computeInsights(events, { today, timeZone }) })`.
-- [ ] **Step 7: Add the chat tool.** `openWrapped` (no args, `responseFormat: "content_and_artifact"`, artifact `{ type: "wrapped" }`), plus the prompt line: "- For questions about their semester, workload, busy weeks, where their time goes, or a 'wrapped', use openWrapped, then reply in one short sentence saying their semester overview is opening."
-- [ ] **Step 8: Add the modal.** `WrappedModal({ session, onClose })` posts to `/api/insights` and shows a spinner, then the results (or an error with Retry).
+- [ ] **Step 7: Add the chat tool.** `openRecap` (no args, `responseFormat: "content_and_artifact"`, artifact `{ type: "recap" }`), plus the prompt line: "- For questions about their semester, workload, busy weeks, where their time goes, or a 'wrapped', use openRecap, then reply in one short sentence saying their semester overview is opening."
+- [ ] **Step 8: Add the modal.** `RecapModal({ session, onClose })` posts to `/api/insights` and shows a spinner, then the results (or an error with Retry).
   - It uses the existing `.modal-overlay` / `.modal-content`, and the content scrolls (`max-height: 85vh; overflow-y: auto`).
   - **Weekly bars:** height = `scheduledHours / max`, past weeks dimmed, the current week outlined. Each bar is a `<button aria-label="Week of Nov 2: 31 hours">`.
   - **"Busiest weeks so far"** cards and a "heaviest day" line.
-  - **In `Home.js`:** `else if (reply.type === "wrapped") setShowWrapped(true)`, render the modal, and add a 4th quick action, "Semester Wrapped", that sends "How's my semester looking?".
+  - **In `Home.js`:** `else if (reply.type === "recap") setShowRecap(true)`, render the modal, and add a 4th quick action, "Calendar Recap", that sends "How's my semester looking?".
 - [ ] **Step 9: Verify locally.** `npm test` passes and eslint adds no new warnings for the touched frontend files. Check in the browser that the modal opens from chat and from the quick action, that one week's hours roughly match Google Calendar, and that "hi" opens no modal.
-- [ ] **Step 10: Commit locally** in both repos: `Feat: Semester Wrapped skeleton with weekly hours from chat`. **Stop for the user to test.**
+- [ ] **Step 10: Commit locally** in both repos: `Feat: Calendar Recap skeleton with weekly hours from chat`. **Stop for the user to test.**
 
 ## Milestone 2: Parallel scan with live progress
 
@@ -94,7 +94,7 @@ Fields from later milestones are simply missing until their milestone. `schedule
 
 **Files:**
 - Create: `backend/utils/pool.js`, `backend/test/pool.test.js`, `backend/utils/calendarScan.js`, `backend/test/calendarScan.test.js`
-- Modify: `backend/controllers/insightsController.js`, `src/components/Home/WrappedModal.js`
+- Modify: `backend/controllers/insightsController.js`, `src/components/Home/RecapModal.js`
 
 **Interfaces:**
 - `runPool(items, limit, worker, { signal } = {}) -> Promise<Array<{ ok: true, value } | { ok: false, error }>>`: results in input order, at most `limit` `worker(item, index)` calls running at once, and items not yet started when `signal.aborted` are skipped (`ok: false`).
@@ -139,7 +139,7 @@ Fields from later milestones are simply missing until their milestone. `schedule
 
 **Files:**
 - Create: `backend/utils/classify.js`, `backend/test/classify.test.js`
-- Modify: `backend/utils/insights.js` + tests, `backend/controllers/insightsController.js`, `src/components/Home/WrappedModal.js`
+- Modify: `backend/utils/insights.js` + tests, `backend/controllers/insightsController.js`, `src/components/Home/RecapModal.js`
 
 **Interfaces:**
 - `CATEGORIES = ["class", "study", "work", "meeting", "social", "exercise", "personal", "other"]`
@@ -165,7 +165,7 @@ Fields from later milestones are simply missing until their milestone. `schedule
 **Files:**
 - Modify: `backend/utils/eventSchema.js` + `test/eventSchema.test.js`, `backend/src/parseSyllabus.js`
 - Modify: `src/components/FileUpload/FileUpload.js` (`handleExtractEvents`)
-- Modify: `backend/utils/insights.js` + tests, `backend/controllers/insightsController.js` (skip classifying tagged events), `src/components/Home/WrappedModal.js`
+- Modify: `backend/utils/insights.js` + tests, `backend/controllers/insightsController.js` (skip classifying tagged events), `src/components/Home/RecapModal.js`
 
 **Interfaces:**
 - Parsed syllabus events carry `extendedProperties.private = { calpal: "syllabus", course, type, gradeWeight }`, with `type` one of `exam | quiz | project | homework | lecture | other`.
@@ -199,7 +199,7 @@ Fields from later milestones are simply missing until their milestone. `schedule
 **You can try:** 2–3 sentences at the top of the modal, like "You've spent 38% of your time in class… Nov 16 is your toughest week ahead: CS 101 midterm and Chem project, 45% of CS riding on it, with only 6 free hours."
 
 **Files:**
-- Modify: `backend/controllers/insightsController.js`, `src/components/Home/WrappedModal.js`
+- Modify: `backend/controllers/insightsController.js`, `src/components/Home/RecapModal.js`
 
 - [ ] **Step 1: Add the summary step.** After the `insights` line, write a `progress` line (`stage: "summary"`). Call `withStructuredOutput(z.object({ summary: z.string() }))` with a compact view of the insights (hours by category, busiest weeks, crunch weeks with their deadlines and free hours) and the instruction: "2-3 sentences to a student about their semester so far and what's coming. Use only these numbers, dates and courses." Write a `{ type: "summary", summary }` line. If it fails, log it and skip the line.
 - [ ] **Step 2: Show it in the modal.** The summary appears at the top when it arrives. The rest of the results show before it.
