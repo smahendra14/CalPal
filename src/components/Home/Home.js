@@ -150,7 +150,7 @@ const QuickActions = ({ onActionClick }) => (
         >
             <i className="fas fa-chart-bar"></i>
             <div className="quick-action-title">Calendar Recap</div>
-            <div className="quick-action-subtitle">Your busiest weeks</div>
+            <div className="quick-action-subtitle">Where your time went</div>
         </button>
     </div>
 );

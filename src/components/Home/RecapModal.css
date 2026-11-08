@@ -5,10 +5,6 @@
     box-sizing: border-box;
 }
 
-.recap-modal section {
-    margin-bottom: 24px;
-}
-
 .recap-modal h3 {
     font-size: 16px;
     font-weight: 600;
@@ -20,71 +16,41 @@
     padding: 24px 0;
 }
 
-.recap-message i {
-    font-size: 28px;
-    color: var(--primary-orange);
-}
-
-.recap-message .modal-button {
-    margin: 0 auto;
-}
-
-/* Weekly bars */
-.recap-timeline {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 140px;
-    padding-bottom: 2px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.recap-bar {
-    flex: 1;
-    min-height: 2px;
-    background-color: var(--primary-orange);
-    border-radius: 3px 3px 0 0;
-}
-
-.recap-bar.past {
-    opacity: 0.45;
-}
-
-.recap-bar.current {
-    opacity: 1;
-    outline: 2px solid var(--text-primary);
-    outline-offset: 1px;
-}
-
-.recap-timeline-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-}
-
-/* Busiest weeks */
-.recap-cards {
+.recap-categories {
     list-style: none;
     padding: 0;
     margin: 0;
-    border: 1px solid rgba(255, 153, 0, 0.2);
-    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.recap-cards li {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 16px;
+.recap-categories li {
+    display: grid;
+    grid-template-columns: 80px 1fr 90px;
+    align-items: center;
+    gap: 12px;
     font-size: 14px;
 }
 
-.recap-cards li + li {
-    border-top: 1px solid var(--border-color);
+.recap-category-name {
+    text-transform: capitalize;
 }
 
-.recap-modal .recap-fact {
-    text-align: left;
-    color: var(--text-primary);
+.recap-category-track {
+    height: 10px;
+    background-color: rgba(255, 153, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.recap-category-fill {
+    height: 100%;
+    background-color: var(--primary-orange);
+}
+
+.recap-category-hours {
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 13px;
 }
