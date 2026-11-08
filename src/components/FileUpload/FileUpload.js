@@ -2,18 +2,18 @@ import React, { useState, useRef } from "react";
 import "./FileUpload.css";
 import { readError } from "../../utils/api.js";
 
-// --- Helper Component for Event Display ---
-const EventCard = ({ event, onAddToCalendar, isAdding }) => {
-    const formatDate = (dateTime) => {
-        if (!dateTime) return "N/A";
-        return new Date(dateTime).toLocaleString(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short",
-        });
-    };
+const formatDate = (dateTime) => {
+    if (!dateTime) return "N/A";
+    return new Date(dateTime).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+    });
+};
 
+const EventCard = ({ event, status, onAddToCalendar, disabled }) => {
+    const { state, error } = status;
     return (
-        <div className="event-card">
+        <div className={`event-card ${state}`}>
             <h3 className="event-summary">{event.summary}</h3>
             <p className="event-description">
                 {event.description || "No description provided."}
@@ -26,21 +26,36 @@ const EventCard = ({ event, onAddToCalendar, isAdding }) => {
                     <strong>End:</strong> {formatDate(event.end?.dateTime)}
                 </p>
             </div>
-            <button
-                className={`add-to-calendar-btn ${isAdding ? "loading" : ""}`}
-                onClick={() => onAddToCalendar(event)}
-                disabled={isAdding}
-            >
-                {isAdding ? (
-                    <>
-                        <i className="fas fa-spinner fa-spin"></i> Adding...
-                    </>
-                ) : (
-                    <>
-                        <i className="fas fa-calendar-plus"></i> Add to Calendar
-                    </>
-                )}
-            </button>
+            {state === "failed" && (
+                <p className="event-error">
+                    <i className="fas fa-exclamation-circle"></i> {error}
+                </p>
+            )}
+            {state === "added" ? (
+                <span className="event-added-badge">
+                    <i className="fas fa-check"></i> Added
+                </span>
+            ) : (
+                <button
+                    className={`add-to-calendar-btn ${state === "adding" ? "loading" : ""}`}
+                    onClick={onAddToCalendar}
+                    disabled={disabled || state === "adding"}
+                >
+                    {state === "adding" ? (
+                        <>
+                            <i className="fas fa-spinner fa-spin"></i> Adding...
+                        </>
+                    ) : state === "failed" ? (
+                        <>
+                            <i className="fas fa-redo"></i> Retry
+                        </>
+                    ) : (
+                        <>
+                            <i className="fas fa-calendar-plus"></i> Add to Calendar
+                        </>
+                    )}
+                </button>
+            )}
         </div>
     );
 };
@@ -53,8 +68,9 @@ function FileUpload({ supabase, session }) {
     const [courseName, setCourseName] = useState("");
     const [semester, setSemester] = useState("");
     const [year, setYear] = useState(new Date().getFullYear().toString());
+    // One { state: "pending" | "adding" | "added" | "failed", error } per event.
+    const [statuses, setStatuses] = useState([]);
     const [addingEvents, setAddingEvents] = useState(false);
-    const [addingEventIndex, setAddingEventIndex] = useState(null);
     const fileInputRef = useRef(null);
 
     const handleFileSelect = (file) => {
@@ -76,6 +92,7 @@ function FileUpload({ supabase, session }) {
     const handleReset = () => {
         setSelectedFile(null);
         setEvents([]);
+        setStatuses([]);
         setError(null);
         setIsLoading(false);
         setCourseName("");
@@ -115,6 +132,7 @@ function FileUpload({ supabase, session }) {
             const data = await response.json();
             if (data.events && data.events.length > 0) {
                 setEvents(data.events);
+                setStatuses(data.events.map(() => ({ state: "pending" })));
             } else {
                 setError("No events could be found in the provided PDF.");
             }
@@ -150,44 +168,25 @@ function FileUpload({ supabase, session }) {
         }
     };
 
-    const handleAddSingleEventToCalendar = async (event) => {
-        try {
-            setAddingEventIndex(events.indexOf(event));
-            const result = await addEventToCalendar(event);
+    const setStatus = (index, status) =>
+        setStatuses((prev) => prev.map((s, i) => (i === index ? status : s)));
 
-            // Remove the added event from the list
-            setEvents((prev) => prev.filter((e) => e !== event));
-
-            // Show success message (you might want to add a toast notification system)
-            console.log(result.message);
-        } catch (error) {
-            setError(`Failed to add event: ${error.message}`);
-        } finally {
-            setAddingEventIndex(null);
-        }
-    };
-
-    const handleAddAllEventsToCalendar = async () => {
-        try {
-            setAddingEvents(true);
-
-            for (const event of events) {
-                setAddingEventIndex(events.indexOf(event));
-                await addEventToCalendar(event);
+    const addEvents = async (indices) => {
+        setAddingEvents(true);
+        for (const i of indices) {
+            setStatus(i, { state: "adding" });
+            try {
+                await addEventToCalendar(events[i]);
+                setStatus(i, { state: "added" });
+            } catch (err) {
+                setStatus(i, { state: "failed", error: err.message });
             }
-
-            // Clear events after all are added
-            setEvents([]);
-
-            // Show success message
-            console.log("All events have been added to your calendar");
-        } catch (error) {
-            setError(`Failed to add all events: ${error.message}`);
-        } finally {
-            setAddingEvents(false);
-            setAddingEventIndex(null);
         }
+        setAddingEvents(false);
     };
+
+    const indicesWhere = (...states) =>
+        statuses.flatMap((s, i) => (states.includes(s.state) ? [i] : []));
 
     // --- Render Logic ---
     const renderContent = () => {
@@ -212,44 +211,145 @@ function FileUpload({ supabase, session }) {
             );
         }
         if (events.length > 0) {
+            const added = indicesWhere("added");
+            const failed = indicesWhere("failed");
+            const remaining = indicesWhere("pending", "failed");
+            const done = added.length + failed.length;
+            const allSettled = !addingEvents && indicesWhere("pending").length === 0;
+
+            if (allSettled) {
+                return (
+                    <div className="events-summary">
+                        <i
+                            className={`fas ${failed.length ? "fa-exclamation-triangle" : "fa-check-circle"} summary-icon ${failed.length ? "partial" : ""}`}
+                        ></i>
+                        <h2>
+                            Added {added.length} of {events.length} events to your
+                            calendar
+                        </h2>
+                        {added.length > 0 && (
+                            <ul className="summary-list">
+                                {added.map((i) => (
+                                    <li key={i}>
+                                        <i className="fas fa-check"></i>
+                                        <span>{events[i].summary}</span>
+                                        <span className="summary-date">
+                                            {formatDate(events[i].start?.dateTime)}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {failed.length > 0 && (
+                            <>
+                                <h3 className="summary-failed-heading">
+                                    {failed.length} couldn't be added
+                                </h3>
+                                <ul className="summary-list failed">
+                                    {failed.map((i) => (
+                                        <li key={i}>
+                                            <i className="fas fa-times"></i>
+                                            <span>{events[i].summary}</span>
+                                            <span className="summary-date">
+                                                {statuses[i].error}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                        <div className="events-list-actions">
+                            {failed.length > 0 && (
+                                <button
+                                    className="confirm-all-btn"
+                                    onClick={() => addEvents(failed)}
+                                >
+                                    <i className="fas fa-redo"></i> Retry failed (
+                                    {failed.length})
+                                </button>
+                            )}
+                            <a
+                                className="reset-button"
+                                href="https://calendar.google.com"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <i className="fas fa-calendar"></i> Open Google
+                                Calendar
+                            </a>
+                            <button className="reset-button" onClick={handleReset}>
+                                <i className="fas fa-file-upload"></i> Upload another
+                                syllabus
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const current = statuses.findIndex((s) => s.state === "adding");
             return (
                 <div className="events-list-container">
-                    <h2>Extracted Events</h2>
-                    <div className="events-list-actions">
-                        <button
-                            className={`confirm-all-btn ${
-                                addingEvents ? "loading" : ""
-                            }`}
-                            onClick={handleAddAllEventsToCalendar}
-                            disabled={addingEvents}
-                        >
-                            {addingEvents ? (
-                                <>
-                                    <i className="fas fa-spinner fa-spin"></i>{" "}
-                                    Adding Events...
-                                </>
-                            ) : (
-                                <>
-                                    <i className="fas fa-check-double"></i>{" "}
-                                    Confirm & Add All
-                                </>
-                            )}
-                        </button>
-                        <button
-                            className="reset-button"
-                            onClick={handleReset}
-                            disabled={addingEvents}
-                        >
-                            <i className="fas fa-undo"></i> Start Over
-                        </button>
+                    <div className="events-list-header">
+                        <h2>Extracted Events ({events.length})</h2>
+                        <div className="events-list-actions">
+                            <button
+                                className={`confirm-all-btn ${addingEvents ? "loading" : ""}`}
+                                onClick={() => addEvents(remaining)}
+                                disabled={addingEvents}
+                            >
+                                {addingEvents ? (
+                                    <>
+                                        <i className="fas fa-spinner fa-spin"></i>{" "}
+                                        Adding Events...
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="fas fa-check-double"></i>{" "}
+                                        Add All ({remaining.length})
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                className="reset-button"
+                                onClick={handleReset}
+                                disabled={addingEvents}
+                            >
+                                <i className="fas fa-undo"></i> Start Over
+                            </button>
+                        </div>
+                        {(addingEvents || done > 0) && (
+                            <div className="add-progress">
+                                <div
+                                    className="add-progress-bar"
+                                    role="progressbar"
+                                    aria-valuemin={0}
+                                    aria-valuemax={events.length}
+                                    aria-valuenow={done}
+                                >
+                                    <div
+                                        className="add-progress-fill"
+                                        style={{
+                                            width: `${(done / events.length) * 100}%`,
+                                        }}
+                                    ></div>
+                                </div>
+                                <p className="add-progress-text">
+                                    {done} of {events.length} done
+                                    {failed.length > 0 && ` · ${failed.length} failed`}
+                                    {current !== -1 &&
+                                        ` · Adding "${events[current].summary}"`}
+                                </p>
+                            </div>
+                        )}
                     </div>
                     <div className="events-list">
                         {events.map((event, index) => (
                             <EventCard
                                 key={index}
                                 event={event}
-                                onAddToCalendar={handleAddSingleEventToCalendar}
-                                isAdding={addingEventIndex === index}
+                                status={statuses[index]}
+                                onAddToCalendar={() => addEvents([index])}
+                                disabled={addingEvents}
                             />
                         ))}
                     </div>
