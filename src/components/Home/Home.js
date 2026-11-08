@@ -386,7 +386,7 @@ const Home = ({ session }) => {
 
             const result = await response.json();
 
-            const botMessage = { author: "bot", text: result.message };
+            const botMessage = { author: "bot", text: result.message, link: result.link };
             setMessages((prev) => [...prev, botMessage]);
         } catch (error) {
             console.error("Error creating event:", error);
@@ -490,6 +490,14 @@ const Home = ({ session }) => {
                                     className={`message-bubble ${msg.author}-bubble`}
                                 >
                                     {msg.text}
+                                    {msg.link && (
+                                        <>
+                                            {" "}
+                                            <a href={msg.link} target="_blank" rel="noreferrer">
+                                                View in Google Calendar
+                                            </a>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}
