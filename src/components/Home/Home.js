@@ -281,8 +281,7 @@ const Home = ({ session }) => {
 
                 if (!response.ok) throw new Error(await readError(response, "Server error"));
 
-                const botResponseText = await response.text();
-                handleAgentResponse(botResponseText); // Use existing handler for JSON/text responses
+                handleAgentReply(await response.json());
             }
 
         } catch (error) {
@@ -301,66 +300,14 @@ const Home = ({ session }) => {
         }
     };
 
-    // --- REVISED Handler for ALL Agent Responses ---
-    const handleAgentResponse = (response) => {
-        let cleanResponse = response.trim();
-
-        // Step 1: Clean the response string.
-        // This reliably removes the markdown wrapper if it exists.
-        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            // If no JSON is found, treat it as a plain text message.
-            const botMessage = { author: "bot", text: response };
-            setMessages((prev) => [...prev, botMessage]);
-            return;
-        }
-
-        cleanResponse = jsonMatch[0];
-
-        let parsedResponse;
-        try {
-            // Step 2: Try to parse the cleaned response.
-            parsedResponse = JSON.parse(cleanResponse);
-        } catch (e) {
-            // If parsing the extracted JSON fails, it's a malformed response.
-            console.error("Failed to parse cleaned JSON:", e);
-            const botMessage = { author: "bot", text: response }; // Show original response
-            setMessages((prev) => [...prev, botMessage]);
-            return;
-        }
-
-        // Step 3: Process the valid JSON object as before.
-        if (parsedResponse.action && parsedResponse.payload) {
-            if (parsedResponse.message) {
-                const botTextMessage = {
-                    author: "bot",
-                    text: parsedResponse.message,
-                };
-                setMessages((prev) => [...prev, botTextMessage]);
-            }
-
-            switch (parsedResponse.action) {
-                case "CONFIRM_CREATE_EVENT":
-                    setPendingEvent(parsedResponse.payload);
-                    break;
-
-                case "DISPLAY_TODAY_EVENTS":
-                    setTodayEvents(parsedResponse.payload.events || []);
-                    setShowEventsModal(true);
-                    break;
-
-                default:
-                    console.warn(
-                        "Received unknown action:",
-                        parsedResponse.action
-                    );
-                    // Even if the action is unknown, we've already shown the message.
-                    break;
-            }
-        } else {
-            // The JSON was valid but didn't have the expected action/payload format.
-            const botMessage = { author: "bot", text: response };
-            setMessages((prev) => [...prev, botMessage]);
+    // The backend always replies with { type: "text" | "confirm_event" | "events", message, event?, events? }
+    const handleAgentReply = (reply) => {
+        setMessages((prev) => [...prev, { author: "bot", text: reply.message }]);
+        if (reply.type === "confirm_event") {
+            setPendingEvent(reply.event);
+        } else if (reply.type === "events") {
+            setTodayEvents(reply.events);
+            setShowEventsModal(true);
         }
     };
 
