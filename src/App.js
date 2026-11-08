@@ -68,7 +68,6 @@ function App() {
             if (session) {
                 // Check for and store the refresh token if available
                 const refreshToken = session.provider_refresh_token;
-                const email = session.user.email;
                 if (refreshToken) {
                     try {
                         await storeRefreshTokenInDatabase(
@@ -90,7 +89,7 @@ function App() {
                     .update({
                         time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                     })
-                    .eq("email", email);
+                    .eq("id", session.user.id);
                 if (error) console.error("Error storing time zone:", error.message);
             }
         };

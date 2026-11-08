@@ -14,7 +14,7 @@ const Settings = ({ supabase, session }) => {
                 const { data, error } = await supabase
                     .from("user_info")
                     .select("send_daily_summary")
-                    .eq("email", session.user.email)
+                    .eq("id", session.user.id)
                     .single(); // Expect a single row
 
                 if (error) throw error;
@@ -42,7 +42,7 @@ const Settings = ({ supabase, session }) => {
         const { error } = await supabase
             .from("user_info")
             .update({ send_daily_summary: isEnabled })
-            .eq("email", session.user.email);
+            .eq("id", session.user.id);
         setSaving(false);
 
         if (error) {
