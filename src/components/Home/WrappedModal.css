@@ -1,0 +1,90 @@
+.wrapped-modal {
+    max-width: 640px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.wrapped-modal section {
+    margin-bottom: 24px;
+}
+
+.wrapped-modal h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+
+.wrapped-message {
+    text-align: center;
+    padding: 24px 0;
+}
+
+.wrapped-message i {
+    font-size: 28px;
+    color: var(--primary-orange);
+}
+
+.wrapped-message .modal-button {
+    margin: 0 auto;
+}
+
+/* Weekly bars */
+.wrapped-timeline {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 140px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.wrapped-bar {
+    flex: 1;
+    min-height: 2px;
+    background-color: var(--primary-orange);
+    border-radius: 3px 3px 0 0;
+}
+
+.wrapped-bar.past {
+    opacity: 0.45;
+}
+
+.wrapped-bar.current {
+    opacity: 1;
+    outline: 2px solid var(--text-primary);
+    outline-offset: 1px;
+}
+
+.wrapped-timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* Busiest weeks */
+.wrapped-cards {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid rgba(255, 153, 0, 0.2);
+    border-radius: 12px;
+}
+
+.wrapped-cards li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+.wrapped-cards li + li {
+    border-top: 1px solid var(--border-color);
+}
+
+.wrapped-modal .wrapped-fact {
+    text-align: left;
+    color: var(--text-primary);
+}

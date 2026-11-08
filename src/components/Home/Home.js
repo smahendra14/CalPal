@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Home.css";
 import { readError } from "../../utils/api.js";
+import WrappedModal from "./WrappedModal.js";
 
 // --- Welcome Message Component (Unchanged) ---
 const WelcomeHeader = ({ userName = "Asal Design" }) => (
@@ -143,6 +144,14 @@ const QuickActions = ({ onActionClick }) => (
             <div className="quick-action-title">Find Free Time</div>
             <div className="quick-action-subtitle">Check availability</div>
         </button>
+        <button
+            className="quick-action-button"
+            onClick={() => onActionClick("How's my semester looking?")}
+        >
+            <i className="fas fa-chart-bar"></i>
+            <div className="quick-action-title">Semester Wrapped</div>
+            <div className="quick-action-subtitle">Your busiest weeks</div>
+        </button>
     </div>
 );
 
@@ -171,6 +180,7 @@ const Home = ({ session }) => {
     const [pendingEvent, setPendingEvent] = useState(null);
     const [showEventsModal, setShowEventsModal] = useState(false);
     const [todayEvents, setTodayEvents] = useState([]);
+    const [showWrapped, setShowWrapped] = useState(false);
 
     // --- NEW: State for PDF Q&A context ---
     // const [activePdfName, setActivePdfName] = useState("");
@@ -308,6 +318,8 @@ const Home = ({ session }) => {
         } else if (reply.type === "events") {
             setTodayEvents(reply.events);
             setShowEventsModal(true);
+        } else if (reply.type === "wrapped") {
+            setShowWrapped(true);
         }
     };
 
@@ -416,6 +428,9 @@ const Home = ({ session }) => {
                     onClose={() => setShowEventsModal(false)}
                     events={todayEvents}
                 />
+                {showWrapped && (
+                    <WrappedModal session={session} onClose={() => setShowWrapped(false)} />
+                )}
 
                 <div className="chat-interface">
                     {messages.length === 0 && (
