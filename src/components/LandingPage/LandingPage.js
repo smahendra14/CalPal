@@ -8,6 +8,8 @@ const LandingPage = ({ supabase, refreshToken, setRefreshToken }) => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
+                // Come back to wherever sign-in started (localhost in development)
+                redirectTo: window.location.origin,
                 queryParams: {
                     access_type: "offline",
                     prompt: "consent",
