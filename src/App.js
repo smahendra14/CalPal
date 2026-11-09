@@ -66,7 +66,8 @@ function App() {
     useEffect(() => {
         const handleTokenStorage = async () => {
             if (session) {
-                // Check for and store the refresh token if available
+                // Supabase only includes Google's refresh token in the session right after sign-in and doesn't keep it,
+                // so it's sent to the backend now. The backend encrypts and stores it for offline calendar access (daily emails).
                 const refreshToken = session.provider_refresh_token;
                 if (refreshToken) {
                     try {

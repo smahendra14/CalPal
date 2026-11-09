@@ -275,7 +275,8 @@ const Home = ({ session }) => {
         }
     };
 
-    // The backend always replies with { type: "text" | "confirm_event" | "events", message, event?, events? }
+    // The backend always replies with { type: "text" | "confirm_event" | "events" | "recap", message, event?, events? }.
+    // type decides which modal opens; a new kind of reply needs a new case here.
     const handleAgentReply = (reply) => {
         setMessages((prev) => [...prev, { author: "bot", text: reply.message }]);
         if (reply.type === "confirm_event") {
@@ -288,6 +289,7 @@ const Home = ({ session }) => {
         }
     };
 
+    // The agent only drafts events. This is the one place an event is created, after the user confirms the draft.
     const confirmAddEvent = async () => {
         if (!pendingEvent || !session) return;
 
