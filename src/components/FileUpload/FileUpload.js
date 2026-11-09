@@ -117,7 +117,7 @@ function FileUpload({ supabase, session }) {
 
         try {
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL}/parse-syllabus`,
+                `${process.env.REACT_APP_API_URL}/api/syllabus/parse`,
                 {
                     method: "POST",
                     headers: {
@@ -147,7 +147,7 @@ function FileUpload({ supabase, session }) {
 
     const addEventToCalendar = async (event) => {
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/create-event`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/calendar/events`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

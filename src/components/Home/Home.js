@@ -3,7 +3,7 @@ import "./Home.css";
 import { readError } from "../../utils/api.js";
 import RecapModal from "./RecapModal.js";
 
-// --- Welcome Message Component (Unchanged) ---
+// --- Welcome Message Component ---
 const WelcomeHeader = ({ userName = "Asal Design" }) => (
     <div className="welcome-header">
         <h1>Welcome!</h1>
@@ -16,7 +16,7 @@ const WelcomeHeader = ({ userName = "Asal Design" }) => (
     </div>
 );
 
-// --- Confirmation Modal Component (Unchanged) ---
+// --- Confirmation Modal Component ---
 const ConfirmationModal = ({ event, onConfirm, onCancel, isAdding }) => {
     if (!event) return null;
     return (
@@ -64,7 +64,7 @@ const ConfirmationModal = ({ event, onConfirm, onCancel, isAdding }) => {
     );
 };
 
-// --- NEW: View Events Modal Component ---
+// --- View Events Modal Component ---
 const ViewEventsModal = ({ isOpen, onClose, events }) => {
     if (!isOpen) return null;
 
@@ -111,7 +111,7 @@ const ViewEventsModal = ({ isOpen, onClose, events }) => {
     );
 };
 
-// --- Quick Actions Component (Unchanged) ---
+// --- Quick Actions Component ---
 const QuickActions = ({ onActionClick }) => (
     <div className="quick-actions">
         <button
@@ -155,7 +155,7 @@ const QuickActions = ({ onActionClick }) => (
     </div>
 );
 
-// --- NEW: File Preview Component ---
+// --- File Preview Component ---
 const FilePreview = ({ name, onRemove }) => (
     <div className="file-preview">
         <i className="fas fa-file-pdf"></i>
@@ -176,7 +176,6 @@ const Home = ({ session }) => {
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
-    // --- UPDATED State for all modals ---
     const [pendingEvent, setPendingEvent] = useState(null);
     const [showEventsModal, setShowEventsModal] = useState(false);
     const [todayEvents, setTodayEvents] = useState([]);
@@ -225,7 +224,7 @@ const Home = ({ session }) => {
 
                 const formData = new FormData();
                 formData.append("file", selectedFile);
-                const uploadResponse = await fetch(`${process.env.REACT_APP_API_URL}/upload-pdf`, {
+                const uploadResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/pdf/upload`, {
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${supabaseAccessToken}`,
@@ -243,7 +242,7 @@ const Home = ({ session }) => {
             }
 
             // The agent searches the attached PDF itself, so follow-up questions keep their context
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/generate`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/calendar/generate`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -296,7 +295,7 @@ const Home = ({ session }) => {
 
         try {
             const supabaseAccessToken = session.access_token;
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/create-event`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/calendar/events`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -387,7 +386,6 @@ const Home = ({ session }) => {
     return (
         <div className="main-container">
             <div className="content-container">
-                {/* --- Render ALL Modals --- */}
                 <ConfirmationModal
                     event={pendingEvent}
                     onConfirm={confirmAddEvent}
